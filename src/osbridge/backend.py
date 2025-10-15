@@ -1,8 +1,7 @@
-from importlib.resources import files
 from common import *
 
 class BackendOsBridge:
-    """Simplified backend for Fin Plate Connection"""
+    """Backend for Highway Bridge Design"""
     
     def __init__(self):
         self.module = KEY_DISP_FINPLATE
@@ -16,63 +15,60 @@ class BackendOsBridge:
         """Return list of input fields for the UI"""
         options_list = []
 
-        t16 = (KEY_MODULE, KEY_DISP_FINPLATE, TYPE_MODULE, None, True, 'No Validator')
-        options_list.append(t16)
-
-        t1 = (None, DISP_TITLE_CM, TYPE_TITLE, None, True, 'No Validator')
+        t1 = (KEY_MODULE, KEY_DISP_FINPLATE, TYPE_MODULE, None, True, 'No Validator')
         options_list.append(t1)
 
-        t2 = (KEY_CONN, KEY_DISP_CONN, TYPE_COMBOBOX, VALUES_CONN, True, 'No Validator')
+        # Type of Structure section
+        t2 = (None, DISP_TITLE_STRUCTURE, TYPE_TITLE, None, True, 'No Validator')
         options_list.append(t2)
 
-        # Mock image path - you'll need to provide an actual image
-        t15 = (KEY_IMAGE, None, TYPE_IMAGE, "path/to/image.png", True, 'No Validator')
-        options_list.append(t15)
-
-        t3 = (KEY_SUPTNGSEC, KEY_DISP_COLSEC, TYPE_COMBOBOX, connectdb("Columns"), True, 'No Validator')
+        t3 = (KEY_STRUCTURE_TYPE, KEY_DISP_STRUCTURE_TYPE, TYPE_COMBOBOX, VALUES_STRUCTURE_TYPE, True, 'No Validator')
         options_list.append(t3)
 
-        t4 = (KEY_SUPTDSEC, KEY_DISP_BEAMSEC, TYPE_COMBOBOX, connectdb("Beams"), True, 'No Validator')
+        # Project Location section
+        t4 = (None, DISP_TITLE_PROJECT, TYPE_TITLE, None, True, 'No Validator')
         options_list.append(t4)
 
-        t5 = (KEY_MATERIAL, KEY_DISP_MATERIAL, TYPE_COMBOBOX, VALUES_MATERIAL, True, 'No Validator')
+        t5 = (KEY_PROJECT_LOCATION, KEY_DISP_PROJECT_LOCATION, TYPE_COMBOBOX, VALUES_PROJECT_LOCATION, True, 'No Validator')
         options_list.append(t5)
 
-        t6 = (None, DISP_TITLE_FSL, TYPE_TITLE, None, True, 'No Validator')
+        # Geometric Details section
+        t6 = (None, DISP_TITLE_GEOMETRIC, TYPE_TITLE, None, True, 'No Validator')
         options_list.append(t6)
 
-        t7 = (KEY_SHEAR, KEY_DISP_SHEAR, TYPE_TEXTBOX, None, True, 'Int Validator')
+        t7 = (KEY_SPAN, KEY_DISP_SPAN, TYPE_TEXTBOX, None, True, 'Double Validator')
         options_list.append(t7)
 
-        t8 = (KEY_AXIAL, KEY_DISP_AXIAL, TYPE_TEXTBOX, None, True, 'Int Validator')
+        t8 = (KEY_CARRIAGEWAY_WIDTH, KEY_DISP_CARRIAGEWAY_WIDTH, TYPE_TEXTBOX, None, True, 'Double Validator')
         options_list.append(t8)
 
-        t9 = (None, DISP_TITLE_BOLT, TYPE_TITLE, None, True, 'No Validator')
+        t9 = (KEY_FOOTPATH, KEY_DISP_FOOTPATH, TYPE_COMBOBOX, VALUES_FOOTPATH, True, 'No Validator')
         options_list.append(t9)
 
-        t10 = (KEY_D, KEY_DISP_D, TYPE_COMBOBOX_CUSTOMIZED, VALUES_D, True, 'No Validator')
+        t10 = (KEY_SKEW_ANGLE, KEY_DISP_SKEW_ANGLE, TYPE_TEXTBOX, None, True, 'Double Validator')
         options_list.append(t10)
 
-        t11 = (KEY_TYP, KEY_DISP_TYP, TYPE_COMBOBOX, VALUES_TYP, True, 'No Validator')
+        # Material Inputs section
+        t11 = (None, DISP_TITLE_MATERIAL, TYPE_TITLE, None, True, 'No Validator')
         options_list.append(t11)
 
-        t12 = (KEY_GRD, KEY_DISP_GRD, TYPE_COMBOBOX_CUSTOMIZED, VALUES_GRD, True, 'No Validator')
+        t12 = (KEY_GIRDER, KEY_DISP_GIRDER, TYPE_COMBOBOX, connectdb("Material"), True, 'No Validator')
         options_list.append(t12)
 
-        t13 = (None, DISP_TITLE_PLATE, TYPE_TITLE, None, True, 'No Validator')
+        t13 = (KEY_CROSS_BRACING, KEY_DISP_CROSS_BRACING, TYPE_COMBOBOX, connectdb("Material"), True, 'No Validator')
         options_list.append(t13)
 
-        t14 = (KEY_PLATETHK, KEY_DISP_PLATETHK, TYPE_COMBOBOX_CUSTOMIZED, VALUES_PLATETHK, True, 'No Validator')
+        t14 = (KEY_DECK, KEY_DISP_DECK, TYPE_COMBOBOX, connectdb("Material"), True, 'No Validator')
         options_list.append(t14)
 
         return options_list
     
     def customized_input(self):
-        """Return empty list for now - customization not needed for basic test"""
+        """Return empty list for now"""
         return []
     
     def input_value_changed(self):
-        """Return None - no dynamic changes needed for basic test"""
+        """Return None - no dynamic changes needed"""
         return None
     
     def set_osdaglogger(self, key):
