@@ -39,7 +39,7 @@ KEY_DISP_DECK = "Deck"
 # Currently only covers highway bridge
 VALUES_STRUCTURE_TYPE = ["Highway Bridge", "Other"]
 VALUES_PROJECT_LOCATION = ["Location 1", "Location 2", "Location 3"]
-VALUES_FOOTPATH = ["None", "One Side", "Both Sides"]
+VALUES_FOOTPATH = ["None", "Left Edge", "Right Edge", "Both Edges"]
 VALUES_MATERIAL = ["E250 (Fe 410W)A", "E300 (Fe 440)", "E350 (Fe 490)", "E410 (Fe 540)", "E450 (Fe 570)", "E550 (Fe 650)"]
 
 def connectdb(table_name, popup=None):
