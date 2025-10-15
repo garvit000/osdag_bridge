@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator
 
-# Import constants from Common
 from common import *
 
 
@@ -16,15 +15,13 @@ class NoScrollComboBox(QComboBox):
 
 
 def right_aligned_widget(widget):
-    """Center-align widget horizontally within its container"""
+    """Right-align widget horizontally within its container"""
     container = QWidget()
     layout = QHBoxLayout(container)
     layout.setContentsMargins(0, 0, 0, 0)
-    # Add stretches on both sides to center the widget
     layout.addStretch()
     layout.addWidget(widget)
-    layout.addStretch()
-    layout.setAlignment(widget, Qt.AlignCenter)
+    layout.setAlignment(widget, Qt.AlignRight | Qt.AlignVCenter)
     return container
 
 
@@ -39,36 +36,48 @@ def left_aligned_widget(widget):
 
 
 def apply_field_style(widget):
-    # Use Preferred size policy to prevent overflow beyond dock boundaries
     widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-    # Set maximum width to ensure controls don't overflow the dock
-    widget.setMaximumWidth(200)
+    widget.setMaximumWidth(180)
+    widget.setMinimumHeight(24)
+    
     if isinstance(widget, QComboBox):
         style = """
         QComboBox {
-            padding: 2px;
-            border: 1px solid black;
-            border-radius: 5px;
+            padding: 3px 5px;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
             background-color: white;
             color: black;
+            min-height: 20px;
         }
         QComboBox::drop-down {
             subcontrol-origin: padding;
             subcontrol-position: top right;
-            border-left: 0px;
+            width: 20px;
+            border-left: 1px solid #c0c0c0;
+            background-color: #4a7ba7;
+        }
+        QComboBox::down-arrow {
+            image: none;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid white;
+            margin-right: 5px;
         }
         QComboBox QAbstractItemView {
             background-color: white;
-            border: 1px solid black;
+            border: 1px solid #c0c0c0;
             outline: none;
+            selection-background-color: #e8f4ff;
         }
         QComboBox QAbstractItemView::item {
             color: black;
             background-color: white;
-            padding: 2px;
+            padding: 4px;
+            min-height: 20px;
         }
         QComboBox QAbstractItemView::item:hover {
-            background-color: #90AF13;
+            background-color: #e8f4ff;
             color: black;
         }
         """
@@ -76,11 +85,15 @@ def apply_field_style(widget):
     elif isinstance(widget, QLineEdit):
         widget.setStyleSheet("""
         QLineEdit {
-            padding: 1px 7px;
-            border: 1px solid #070707;
-            border-radius: 6px;
+            padding: 3px 5px;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
             background-color: white;
-            color: #000000;
+            color: black;
+            min-height: 20px;
+        }
+        QLineEdit:focus {
+            border: 1px solid #4a7ba7;
         }
         """)
 
@@ -88,14 +101,19 @@ def apply_field_style(widget):
 def style_main_buttons():
     return """
         QPushButton {
-            background-color: #94b816;
+            background-color: #90AF13;
             color: white;
             font-weight: bold;
-            border-radius: 4px;
-            padding: 6px 18px;
+            border: 1px solid #7a9611;
+            border-radius: 3px;
+            padding: 6px 16px;
+            min-height: 28px;
         }
         QPushButton:hover {
             background-color: #7a9a12;
+        }
+        QPushButton:pressed {
+            background-color: #6a8a10;
         }
     """
 
@@ -116,14 +134,13 @@ class InputDock(QWidget):
 
         # Get input fields from backend
         input_field_list = self.backend.input_values()
-        input_field_list = self.equalize_label_length(input_field_list)
 
         self.build_left_panel(input_field_list)
         self.main_layout.addWidget(self.left_container)
 
         # Toggle strip
         self.toggle_strip = QWidget()
-        self.toggle_strip.setStyleSheet("background-color: #94b816;")
+        self.toggle_strip.setStyleSheet("background-color: #90AF13;")
         self.toggle_strip.setFixedWidth(6)
         toggle_layout = QVBoxLayout(self.toggle_strip)
         toggle_layout.setContentsMargins(0, 0, 0, 0)
@@ -135,37 +152,20 @@ class InputDock(QWidget):
         self.toggle_btn.setToolTip("Hide panel")
         self.toggle_btn.setStyleSheet("""
             QPushButton {
-                background-color: #6c8408;
+                background-color: #7a9a12;
                 color: white;
                 font-size: 12px;
                 font-weight: bold;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #5e7407;
+                background-color: #6a8a10;
             }
         """)
         toggle_layout.addStretch()
         toggle_layout.addWidget(self.toggle_btn)
         toggle_layout.addStretch()
         self.main_layout.addWidget(self.toggle_strip)
-
-    def equalize_label_length(self, list):
-        max_len = 0
-        for t in list:
-            if t[2] not in [TYPE_TITLE, TYPE_IMAGE]:
-                if len(t[1]) > max_len:
-                    max_len = len(t[1])
-        
-        return_list = [] 
-        for t in list:
-            if t[2] not in [TYPE_TITLE, TYPE_IMAGE]:
-                new_tupple = (t[0], t[1].ljust(max_len)) + t[2:]
-            else:
-                new_tupple = t
-            return_list.append(new_tupple)
-
-        return return_list
 
     def get_validator(self, validator):
         if validator == 'Int Validator':
@@ -183,21 +183,38 @@ class InputDock(QWidget):
         self.left_panel = QWidget()
         self.left_panel.setStyleSheet("background-color: white;")
         panel_layout = QVBoxLayout(self.left_panel)
-        panel_layout.setContentsMargins(5, 5, 5, 5)
+        panel_layout.setContentsMargins(8, 8, 8, 8)
         panel_layout.setSpacing(0)
 
-        # Top Bar
+        # Top Bar with buttons
         top_bar = QHBoxLayout()
-        top_bar.setSpacing(10)
+        top_bar.setSpacing(8)
+        top_bar.setContentsMargins(0, 0, 0, 10)
+        
         input_dock_btn = QPushButton("Basic Inputs")
         input_dock_btn.setStyleSheet(style_main_buttons())
         input_dock_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         top_bar.addWidget(input_dock_btn)
         
         additional_inputs_btn = QPushButton("Additional Inputs")
-        additional_inputs_btn.setStyleSheet(style_main_buttons())
+        additional_inputs_btn.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                color: #333;
+                font-weight: normal;
+                border: 1px solid #c0c0c0;
+                border-radius: 3px;
+                padding: 6px 16px;
+                min-height: 28px;
+            }
+            QPushButton:hover {
+                background-color: #f5f5f5;
+                border: 1px solid #a0a0a0;
+            }
+        """)
         additional_inputs_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         top_bar.addWidget(additional_inputs_btn)
+        
         panel_layout.addLayout(top_bar)
 
         # Scroll area
@@ -208,29 +225,33 @@ class InputDock(QWidget):
         scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         scroll_area.setStyleSheet("""
             QScrollArea {
-                border: 1px solid #EFEFEC;
+                border: none;
                 background-color: transparent;
-                padding: 3px;
             }
             QScrollBar:vertical {
-                background: #E0E0E0;
-                width: 8px;
-                margin: 0px 0px 0px 3px;
-                border-radius: 2px;
+                background: #f0f0f0;
+                width: 10px;
+                margin: 0px;
+                border-radius: 0px;
             }
             QScrollBar::handle:vertical {
-                background: #A0A0A0;
+                background: #c0c0c0;
                 min-height: 30px;
-                border-radius: 2px;
+                border-radius: 0px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #707070;
+                background: #a0a0a0;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
             }
         """)
 
         group_container = QWidget()
         self.input_widget = group_container
         group_container_layout = QVBoxLayout(group_container)
+        group_container_layout.setContentsMargins(0, 0, 0, 0)
+        group_container_layout.setSpacing(12)
 
         # Build form
         track_group = False
@@ -253,32 +274,33 @@ class InputDock(QWidget):
                 track_group = True
                 current_group.setStyleSheet("""
                     QGroupBox {
-                        border: 1px solid #90AF13;
+                        border: 1px solid #d0d0d0;
                         border-radius: 4px;
-                        margin-top: 0.8em;
+                        margin-top: 8px;
                         font-weight: bold;
+                        font-size: 11px;
+                        padding-top: 8px;
                     }
                     QGroupBox::title {
-                        subcontrol-origin: content;
+                        subcontrol-origin: margin;
                         subcontrol-position: top left;
-                        left: 10px;
+                        left: 8px;
                         padding: 0 4px;
-                        margin-top: -15px;
                         background-color: white;
+                        color: #333;
                     }
                 """)
                 cur_box_form = QFormLayout()
-                cur_box_form.setHorizontalSpacing(5)
-                cur_box_form.setVerticalSpacing(10)
-                cur_box_form.setContentsMargins(10, 10, 10, 10)
-                cur_box_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-                # Center-align the field column for better aesthetics
+                cur_box_form.setHorizontalSpacing(8)
+                cur_box_form.setVerticalSpacing(12)
+                cur_box_form.setContentsMargins(12, 16, 12, 12)
+                cur_box_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 cur_box_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-                cur_box_form.setFormAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
 
             elif type == TYPE_COMBOBOX or type == TYPE_COMBOBOX_CUSTOMIZED:
                 left = QLabel(label)
                 left.setObjectName(field[0] + "_label")
+                left.setStyleSheet("font-weight: normal; color: #333; font-size: 10px;")
 
                 right = NoScrollComboBox()
                 right.setObjectName(field[0])
@@ -295,7 +317,6 @@ class InputDock(QWidget):
                 right.setFixedHeight(90)
                 right.setObjectName(field[0])
                 right.setScaledContents(True)
-                # Try to load image if path exists
                 try:
                     pixmap = QPixmap(field[3])
                     if not pixmap.isNull():
@@ -308,6 +329,7 @@ class InputDock(QWidget):
             elif type == TYPE_TEXTBOX:
                 left = QLabel(label)
                 left.setObjectName(field[0] + "_label")
+                left.setStyleSheet("font-weight: normal; color: #333; font-size: 10px;")
                 
                 right = QLineEdit()
                 apply_field_style(right)
@@ -329,18 +351,18 @@ class InputDock(QWidget):
 
         # Bottom buttons
         btn_button_layout = QHBoxLayout()
-        btn_button_layout.setContentsMargins(0, 20, 0, 0)
-        btn_button_layout.addStretch(2)
+        btn_button_layout.setContentsMargins(0, 15, 0, 0)
+        btn_button_layout.setSpacing(10)
 
         save_input_btn = QPushButton("Save Input")
         save_input_btn.setStyleSheet(style_main_buttons())
+        save_input_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         btn_button_layout.addWidget(save_input_btn)
-        btn_button_layout.addStretch(1)
 
         design_btn = QPushButton("Design")
         design_btn.setStyleSheet(style_main_buttons())
+        design_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         btn_button_layout.addWidget(design_btn)
-        btn_button_layout.addStretch(2)
 
         panel_layout.addLayout(btn_button_layout)
 
@@ -356,15 +378,13 @@ class InputDock(QWidget):
                 background-color: transparent;
             }
             QScrollBar:horizontal {
-                background: #E0E0E0;
-                height: 8px;
-                margin: 3px 0px 0px 0px;
-                border-radius: 2px;
+                background: #f0f0f0;
+                height: 10px;
+                margin: 0px;
             }
             QScrollBar::handle:horizontal {
-                background: #A0A0A0;
+                background: #c0c0c0;
                 min-width: 30px;
-                border-radius: 2px;
             }
         """)
         h_scroll_area.setWidget(self.left_panel)
