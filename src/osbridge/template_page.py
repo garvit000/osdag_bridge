@@ -111,6 +111,7 @@ class CustomWindow(QWidget):
         # Add simple menus
         file_menu = self.menu_bar.addMenu("File")
         edit_menu = self.menu_bar.addMenu("Edit")
+        graphics_menu = self.menu_bar.addMenu("Graphics")
         help_menu = self.menu_bar.addMenu("Help")
         
         main_v_layout.addWidget(self.menu_bar)
@@ -126,9 +127,10 @@ class CustomWindow(QWidget):
         
         # Input dock
         self.input_dock = InputDock(backend=self.backend, parent=self)
-        # Constrain the input dock width to avoid it taking too much space at startup
-        self.input_dock.setMinimumWidth(220)
-        self.input_dock.setMaximumWidth(420)
+        # Set reasonable size constraints for the input dock
+        # Minimum width should accommodate labels + controls + margins
+        self.input_dock.setMinimumWidth(300)
+        self.input_dock.setMaximumWidth(450)
         self.splitter.addWidget(self.input_dock)
 
         # Central widget with CAD and log
@@ -153,19 +155,19 @@ class CustomWindow(QWidget):
 
         self.layout.addWidget(self.splitter)
 
-        # Set initial sizes and stretch factors so the input dock is narrower by default
-        # Give the central widget most of the available space
-        self.splitter.setStretchFactor(0, 0)  # input dock: low stretch
-        self.splitter.setStretchFactor(1, 1)  # central widget: high stretch
-        self.splitter.setStretchFactor(2, 0)  # output dock: low stretch
+        # Set stretch factors: give central widget most space
+        self.splitter.setStretchFactor(0, 0)  # input dock: no stretch
+        self.splitter.setStretchFactor(1, 1)  # central widget: stretches
+        self.splitter.setStretchFactor(2, 0)  # output dock: no stretch
 
-        # Try to set reasonable default sizes (input small, central large, output hidden)
-        input_dock_width = 300
-        total_width = self.width() if self.width() > 0 else 1200
-        central_width = max(600, total_width - input_dock_width)
+        # Set initial sizes - optimized input dock width
+        input_dock_width = 320
         output_dock_width = 0
+        total_width = self.width() if self.width() > 0 else 1200
+        central_width = max(600, total_width - input_dock_width - output_dock_width)
+        
         self.splitter.setSizes([input_dock_width, central_width, output_dock_width])
-
+        
         main_v_layout.addWidget(self.body_widget)
 
 

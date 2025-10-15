@@ -16,11 +16,15 @@ class NoScrollComboBox(QComboBox):
 
 
 def right_aligned_widget(widget):
+    """Center-align widget horizontally within its container"""
     container = QWidget()
     layout = QHBoxLayout(container)
     layout.setContentsMargins(0, 0, 0, 0)
+    # Add stretches on both sides to center the widget
+    layout.addStretch()
     layout.addWidget(widget)
-    layout.setAlignment(widget, Qt.AlignVCenter)
+    layout.addStretch()
+    layout.setAlignment(widget, Qt.AlignCenter)
     return container
 
 
@@ -35,7 +39,10 @@ def left_aligned_widget(widget):
 
 
 def apply_field_style(widget):
-    widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    # Use Preferred size policy to prevent overflow beyond dock boundaries
+    widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    # Set maximum width to ensure controls don't overflow the dock
+    widget.setMaximumWidth(200)
     if isinstance(widget, QComboBox):
         style = """
         QComboBox {
@@ -265,7 +272,9 @@ class InputDock(QWidget):
                 cur_box_form.setVerticalSpacing(10)
                 cur_box_form.setContentsMargins(10, 10, 10, 10)
                 cur_box_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-                cur_box_form.setAlignment(Qt.AlignmentFlag.AlignRight)
+                # Center-align the field column for better aesthetics
+                cur_box_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+                cur_box_form.setFormAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
 
             elif type == TYPE_COMBOBOX or type == TYPE_COMBOBOX_CUSTOMIZED:
                 left = QLabel(label)
