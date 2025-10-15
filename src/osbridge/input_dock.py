@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
-    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy
+    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox
 )
 from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator
@@ -124,6 +124,7 @@ class InputDock(QWidget):
         self.parent = parent
         self.backend = backend
         self.input_widget = None
+        self.structure_type_combo = None  # Store reference to structure type combo box
 
         self.setStyleSheet("background: transparent;")
         self.main_layout = QHBoxLayout(self)
@@ -174,6 +175,18 @@ class InputDock(QWidget):
             return QDoubleValidator()
         else:
             return None
+    
+    def on_structure_type_changed(self, text):
+        """Handle structure type combo box changes"""
+        if text == "Other":
+            # Show warning message when "Other" is selected
+            QMessageBox.warning(
+                self,
+                "Structure Type Not Supported",
+                "The selected structure type is not included currently.\n\n"
+                "This application currently only covers Highway Bridge design.",
+                QMessageBox.Ok
+            )
         
     def build_left_panel(self, field_list):
         left_layout = QVBoxLayout(self.left_container)
@@ -307,6 +320,11 @@ class InputDock(QWidget):
                 apply_field_style(right)
                 option_list = field[3]
                 right.addItems(option_list)
+
+                # Connect signal for Structure Type combo box
+                if field[0] == KEY_STRUCTURE_TYPE:
+                    self.structure_type_combo = right
+                    right.currentTextChanged.connect(self.on_structure_type_changed)
 
                 cur_box_form.addRow(left, right_aligned_widget(right))
             
