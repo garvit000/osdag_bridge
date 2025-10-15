@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
-    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox
+    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog
 )
 from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator
@@ -125,6 +125,8 @@ class InputDock(QWidget):
         self.backend = backend
         self.input_widget = None
         self.structure_type_combo = None  # Store reference to structure type combo box
+        self.project_location_combo = None  # Store reference to project location combo box
+        self.custom_location_input = None  # Store reference to custom location text field
 
         self.setStyleSheet("background: transparent;")
         self.main_layout = QHBoxLayout(self)
@@ -187,6 +189,40 @@ class InputDock(QWidget):
                 "This application currently only covers Highway Bridge design.",
                 QMessageBox.Ok
             )
+    
+    def on_project_location_changed(self, text):
+        """Handle project location combo box changes"""
+        if text == "Custom":
+            # Show input dialog for custom location
+            custom_location, ok = QInputDialog.getText(
+                self,
+                "Custom Location",
+                "Enter city name for load calculations:",
+                QLineEdit.Normal,
+                ""
+            )
+            if ok and custom_location.strip():
+                # Store the custom location
+                self.custom_location_input = custom_location.strip()
+                QMessageBox.information(
+                    self,
+                    "Custom Location Set",
+                    f"Custom location '{custom_location.strip()}' has been set.\n\n"
+                    f"Note: Please ensure load calculation data is available for this location.",
+                    QMessageBox.Ok
+                )
+                self.project_location_combo.addItem(custom_location.strip())
+            elif ok:
+                # User clicked OK but didn't enter anything - revert to previous selection
+                QMessageBox.warning(
+                    self,
+                    "No Location Entered",
+                    "Please enter a valid city name or select from the dropdown.",
+                    QMessageBox.Ok
+                )
+                # Reset to first item if no custom value entered
+                if self.project_location_combo:
+                    self.project_location_combo.setCurrentIndex(0)
         
     def build_left_panel(self, field_list):
         left_layout = QVBoxLayout(self.left_container)
@@ -325,6 +361,19 @@ class InputDock(QWidget):
                 if field[0] == KEY_STRUCTURE_TYPE:
                     self.structure_type_combo = right
                     right.currentTextChanged.connect(self.on_structure_type_changed)
+                    right.setToolTip("Defines the application of the steel girder bridge.\nCurrently only Highway Bridge is supported.")
+                
+                # Connect signal and set default for Project Location combo box
+                elif field[0] == KEY_PROJECT_LOCATION:
+                    self.project_location_combo = right
+                    right.currentTextChanged.connect(self.on_project_location_changed)
+                    right.setToolTip("Select city in India for load calculations.\nSelect 'Custom' to enter a different location.")
+                
+                # Set default value for Footpath combo box
+                elif field[0] == KEY_FOOTPATH:
+                    # Set default to "None" (first item in VALUES_FOOTPATH)
+                    right.setCurrentIndex(0)
+                    right.setToolTip("Select footpath configuration.\nIRC 5 Clause 101.41: Safety kerb required when footpath is not present.")
 
                 cur_box_form.addRow(left, right_aligned_widget(right))
             
@@ -355,6 +404,19 @@ class InputDock(QWidget):
                 right.setEnabled(True if field[4] else False)
                 if field[5] != 'No Validator':
                     right.setValidator(self.get_validator(field[5]))
+                
+                # Set default value and tooltips for specific fields
+                if field[0] == KEY_SKEW_ANGLE:
+                    right.setText(str(SKEW_ANGLE_DEFAULT))
+                    right.setPlaceholderText(f"Default: {SKEW_ANGLE_DEFAULT}°")
+                    right.setToolTip(f"Skew angle of rolled beams or plate girders.\nIRC 5 Clause 105.3.3 recommends ≤ {SKEW_ANGLE_MAX}°")
+                elif field[0] == KEY_SPAN:
+                    right.setPlaceholderText(f"Enter value between {SPAN_MIN}-{SPAN_MAX} m")
+                    right.setToolTip(f"Total length of the steel girder bridge.\nMust be between {SPAN_MIN} m and {SPAN_MAX} m")
+                elif field[0] == KEY_CARRIAGEWAY_WIDTH:
+                    right.setPlaceholderText(f"Min {CARRIAGEWAY_WIDTH_MIN} m")
+                    right.setToolTip(f"Width of bridge deck surface from curb to curb.\nIRC 5 Clause 104.3.1 requires minimum {CARRIAGEWAY_WIDTH_MIN} m")
+                
                 cur_box_form.addRow(left, right_aligned_widget(right))
             
             if index == len(field_list):
