@@ -80,7 +80,38 @@ class BackendOsBridge:
         return []
     
     def func_for_validation(self, design_inputs):
-        """Mock validation - always passes for testing"""
+        """Validate user inputs according to IRC 5 specifications"""
+        errors = []
+        
+        # Validate Span
+        if KEY_SPAN in design_inputs:
+            try:
+                span = float(design_inputs[KEY_SPAN])
+                if span < SPAN_MIN or span > SPAN_MAX:
+                    errors.append(f"Span must be between {SPAN_MIN} m and {SPAN_MAX} m. Current value: {span} m")
+            except (ValueError, TypeError):
+                errors.append("Span must be a valid number")
+        
+        # Validate Carriageway Width
+        if KEY_CARRIAGEWAY_WIDTH in design_inputs:
+            try:
+                width = float(design_inputs[KEY_CARRIAGEWAY_WIDTH])
+                if width < CARRIAGEWAY_WIDTH_MIN:
+                    errors.append(f"Carriageway Width must be at least {CARRIAGEWAY_WIDTH_MIN} m as per IRC 5 Clause 104.3.1. Current value: {width} m")
+            except (ValueError, TypeError):
+                errors.append("Carriageway Width must be a valid number")
+        
+        # Validate Skew Angle
+        if KEY_SKEW_ANGLE in design_inputs:
+            try:
+                angle = float(design_inputs[KEY_SKEW_ANGLE])
+                if angle < SKEW_ANGLE_MIN or angle > SKEW_ANGLE_MAX:
+                    errors.append(f"Skew Angle should be between {SKEW_ANGLE_MIN}° and {SKEW_ANGLE_MAX}° as per IRC 5 Clause 105.3.3. Current value: {angle}°")
+            except (ValueError, TypeError):
+                errors.append("Skew Angle must be a valid number")
+        
+        if errors:
+            return "\n".join(errors)
         return None
     
     def get_3d_components(self):
