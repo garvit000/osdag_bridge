@@ -488,6 +488,16 @@ class InputDock(QWidget):
         # Get current footpath value
         footpath_value = self.footpath_combo.currentText() if self.footpath_combo else "None"
         
+        # Get carriageway width from basic inputs
+        carriageway_width = 7.5  # Default value
+        if self.input_widget:
+            carriageway_field = self.input_widget.findChild(QLineEdit, KEY_CARRIAGEWAY_WIDTH)
+            if carriageway_field and carriageway_field.text():
+                try:
+                    carriageway_width = float(carriageway_field.text())
+                except ValueError:
+                    carriageway_width = 7.5
+        
         # Create or show existing window
         if self.additional_inputs_window is None or not self.additional_inputs_window.isVisible():
             self.additional_inputs_window = QDialog(self)
@@ -497,8 +507,8 @@ class InputDock(QWidget):
             layout = QVBoxLayout(self.additional_inputs_window)
             layout.setContentsMargins(0, 0, 0, 0)
             
-            # Add the additional inputs widget
-            self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, self.additional_inputs_window)
+            # Add the additional inputs widget with carriageway width
+            self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, carriageway_width, self.additional_inputs_window)
             layout.addWidget(self.additional_inputs_widget)
             
             self.additional_inputs_window.show()

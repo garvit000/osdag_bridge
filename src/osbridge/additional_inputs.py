@@ -55,9 +55,11 @@ class BridgeGeometryTab(QWidget):
     
     footpath_changed = Signal(str)  # Signal when footpath status changes
     
-    def __init__(self, footpath_value="None", parent=None):
+    def __init__(self, footpath_value="None", carriageway_width=7.5, parent=None):
         super().__init__(parent)
         self.footpath_value = footpath_value
+        self.carriageway_width = carriageway_width
+        self.updating_fields = False  # Flag to prevent circular updates
         self.init_ui()
     
     def style_input_field(self, field):
@@ -209,21 +211,26 @@ class BridgeGeometryTab(QWidget):
         girder_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         
         self.girder_spacing = QLineEdit()
-        self.girder_spacing.setValidator(QDoubleValidator(0.0, 10.0, 2))
-        self.girder_spacing.setPlaceholderText("Enter spacing in meters")
+        self.girder_spacing.setValidator(QDoubleValidator(0.01, 50.0, 3))
+        self.girder_spacing.setText(str(DEFAULT_GIRDER_SPACING))
+        self.girder_spacing.setPlaceholderText(f"Default: {DEFAULT_GIRDER_SPACING} m")
         self.style_input_field(self.girder_spacing)
+        self.girder_spacing.textChanged.connect(self.on_girder_spacing_changed)
         girder_layout.addRow("Girder Spacing (m):", self.girder_spacing)
         
         self.no_of_girders = QLineEdit()
-        self.no_of_girders.setEnabled(False)
-        self.no_of_girders.setPlaceholderText("Auto-calculated")
+        self.no_of_girders.setValidator(QIntValidator(2, 100))
+        self.no_of_girders.setPlaceholderText("Auto-calculated integer")
         self.style_input_field(self.no_of_girders)
+        self.no_of_girders.textChanged.connect(self.on_no_of_girders_changed)
         girder_layout.addRow("No. of Girders:", self.no_of_girders)
         
         self.deck_overhang = QLineEdit()
-        self.deck_overhang.setValidator(QDoubleValidator(0.0, 5.0, 2))
-        self.deck_overhang.setPlaceholderText("Enter overhang width")
+        self.deck_overhang.setValidator(QDoubleValidator(0.0, 10.0, 3))
+        self.deck_overhang.setText(str(DEFAULT_DECK_OVERHANG))
+        self.deck_overhang.setPlaceholderText(f"Default: {DEFAULT_DECK_OVERHANG} m")
         self.style_input_field(self.deck_overhang)
+        self.deck_overhang.textChanged.connect(self.on_deck_overhang_changed)
         girder_layout.addRow("Deck Overhang Width (m):", self.deck_overhang)
         
         inputs_layout.addWidget(girder_group)
@@ -252,9 +259,11 @@ class BridgeGeometryTab(QWidget):
         footpath_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         
         self.footpath_width = QLineEdit()
-        self.footpath_width.setValidator(QDoubleValidator(0.0, 5.0, 2))
-        self.footpath_width.setPlaceholderText("Enter width in meters")
+        self.footpath_width.setValidator(QDoubleValidator(MIN_FOOTPATH_WIDTH, 5.0, 3))
+        self.footpath_width.setPlaceholderText(f"Min: {MIN_FOOTPATH_WIDTH} m (IRC 5 Clause 104.3.6)")
         self.style_input_field(self.footpath_width)
+        self.footpath_width.textChanged.connect(self.on_footpath_width_changed)
+        self.footpath_width.editingFinished.connect(self.validate_footpath_width)
         footpath_layout.addRow("Footpath Width (m):", self.footpath_width)
         
         self.footpath_thickness = QLineEdit()
@@ -294,8 +303,10 @@ class BridgeGeometryTab(QWidget):
         
         self.crash_barrier_width = QLineEdit()
         self.style_input_field(self.crash_barrier_width)
-        self.crash_barrier_width.setPlaceholderText("Barrier width")
+        self.crash_barrier_width.setText(str(DEFAULT_CRASH_BARRIER_WIDTH))
+        self.crash_barrier_width.setPlaceholderText(f"Default: {DEFAULT_CRASH_BARRIER_WIDTH} m")
         self.crash_barrier_width.setValidator(QDoubleValidator(0.0, 2.0, 3))
+        self.crash_barrier_width.textChanged.connect(self.recalculate_girders)
         crash_form.addRow("Width (m):", self.crash_barrier_width)
         
         self.crash_barrier_area = QLineEdit()
@@ -316,15 +327,18 @@ class BridgeGeometryTab(QWidget):
         railing_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         
         self.railing_width = QLineEdit()
-        self.railing_width.setValidator(QDoubleValidator(0.0, 1000.0, 0))
-        self.railing_width.setPlaceholderText("Enter width in mm")
+        self.railing_width.setValidator(QDoubleValidator(0.0, 1.0, 3))
+        self.railing_width.setText(str(DEFAULT_RAILING_WIDTH))
+        self.railing_width.setPlaceholderText(f"Default: {DEFAULT_RAILING_WIDTH} m")
         self.style_input_field(self.railing_width)
+        self.railing_width.textChanged.connect(self.recalculate_girders)
         railing_form.addRow("Width (m):", self.railing_width)
         
         self.railing_height = QLineEdit()
-        self.railing_height.setValidator(QDoubleValidator(0.0, 3000.0, 0))
-        self.railing_height.setPlaceholderText("Enter height in mm")
+        self.railing_height.setValidator(QDoubleValidator(MIN_RAILING_HEIGHT, 3.0, 3))
+        self.railing_height.setPlaceholderText(f"Min: {MIN_RAILING_HEIGHT} m (IRC 5 Clauses 109.7.2.3 & 109.7.2.4)")
         self.style_input_field(self.railing_height)
+        self.railing_height.editingFinished.connect(self.validate_railing_height)
         railing_form.addRow("Height (m):", self.railing_height)
         
         combined_layout.addLayout(railing_form)
@@ -346,8 +360,9 @@ class BridgeGeometryTab(QWidget):
         
         self.safety_kerb_width = QLineEdit()
         self.style_input_field(self.safety_kerb_width)
-        self.safety_kerb_width.setPlaceholderText("Min 750mm if no footpath")
-        self.safety_kerb_width.setValidator(QDoubleValidator(0.0, 2.0, 3))
+        self.safety_kerb_width.setValidator(QDoubleValidator(MIN_SAFETY_KERB_WIDTH, 2.0, 3))
+        self.safety_kerb_width.setPlaceholderText(f"Min: {MIN_SAFETY_KERB_WIDTH} m (IRC 5 Clause 101.41)")
+        self.safety_kerb_width.editingFinished.connect(self.validate_safety_kerb_width)
         safety_kerb_form.addRow("Width (m):", self.safety_kerb_width)
         
         self.safety_kerb_thickness = QLineEdit()
@@ -368,30 +383,163 @@ class BridgeGeometryTab(QWidget):
         
         main_layout.addLayout(content_layout)
         
-        # Connect calculation signals
-        self.girder_spacing.textChanged.connect(self.calculate_no_of_girders)
-        self.deck_overhang.textChanged.connect(self.calculate_no_of_girders)
+        # Connect deck thickness to footpath thickness
         self.deck_thickness.textChanged.connect(self.update_footpath_thickness)
+        
+        # Initialize calculations with default values
+        self.recalculate_girders()
     
     def update_footpath_value(self, footpath_value):
         """Update visibility based on footpath selection"""
         self.footpath_value = footpath_value
         self.footpath_group.setVisible(footpath_value != "None")
         self.safety_kerb_container.setVisible(footpath_value == "None")
+        self.recalculate_girders()  # Recalculate when footpath changes
         self.footpath_changed.emit(footpath_value)
     
-    def calculate_no_of_girders(self):
-        """Calculate number of girders based on spacing and overhang"""
-        # This would need bridge width from main inputs
-        # Placeholder calculation
+    def get_overall_bridge_width(self):
+        """Calculate Overall Bridge Width = Carriageway + Footpath + Crash Barrier/Railing"""
         try:
-            spacing = float(self.girder_spacing.text()) if self.girder_spacing.text() else 0
-            overhang = float(self.deck_overhang.text()) if self.deck_overhang.text() else 0
+            overall_width = self.carriageway_width
+            
+            # Add footpath width
+            if self.footpath_value != "None":
+                footpath_width = float(self.footpath_width.text()) if self.footpath_width.text() else 0
+                # Count footpaths: "Single Sided" = 1, "Both" = 2
+                num_footpaths = 2 if self.footpath_value == "Both" else (1 if self.footpath_value == "Single Sided" else 0)
+                overall_width += footpath_width * num_footpaths
+            
+            # Add crash barrier width
+            crash_barrier_width = float(self.crash_barrier_width.text()) if self.crash_barrier_width.text() else DEFAULT_CRASH_BARRIER_WIDTH
+            # Assuming crash barriers on both edges
+            overall_width += crash_barrier_width * 2
+            
+            # Add railing width (if footpath present)
+            if self.footpath_value != "None":
+                railing_width = float(self.railing_width.text()) if self.railing_width.text() else DEFAULT_RAILING_WIDTH
+                # Railings on both sides if footpath exists
+                overall_width += railing_width * 2
+            
+            return overall_width
+        except:
+            return self.carriageway_width
+    
+    def recalculate_girders(self):
+        """Recalculate based on the formula: (Overall Bridge Width - Deck Overhang) / Girder Spacing = No. of Girders"""
+        if self.updating_fields:
+            return
+        
+        try:
+            overall_width = self.get_overall_bridge_width()
+            spacing = float(self.girder_spacing.text()) if self.girder_spacing.text() else DEFAULT_GIRDER_SPACING
+            overhang = float(self.deck_overhang.text()) if self.deck_overhang.text() else DEFAULT_DECK_OVERHANG
+            
+            # Validate: spacing and overhang should be less than overall bridge width
+            if spacing >= overall_width or overhang >= overall_width:
+                self.no_of_girders.setText("")
+                return
+            
+            # Calculate: No. of Girders = (Overall Width - 2*Overhang) / Spacing + 1
             if spacing > 0:
-                # Placeholder: assume bridge width of 10m for demo
-                bridge_width = 10.0
-                no_girders = int((bridge_width - 2 * overhang) / spacing) + 1
-                self.no_of_girders.setText(str(no_girders))
+                no_girders = int(round((overall_width - 2 * overhang) / spacing)) + 1
+                if no_girders >= 2:
+                    self.updating_fields = True
+                    self.no_of_girders.setText(str(no_girders))
+                    self.updating_fields = False
+        except:
+            pass
+    
+    def on_girder_spacing_changed(self):
+        """When user changes girder spacing, recalculate number of girders"""
+        if not self.updating_fields:
+            try:
+                overall_width = self.get_overall_bridge_width()
+                spacing_text = self.girder_spacing.text()
+                if spacing_text:
+                    spacing = float(spacing_text)
+                    if spacing >= overall_width:
+                        QMessageBox.warning(self, "Invalid Girder Spacing", 
+                            f"Girder spacing ({spacing:.2f} m) must be less than overall bridge width ({overall_width:.2f} m).")
+                        return
+                self.recalculate_girders()
+            except:
+                pass
+    
+    def on_deck_overhang_changed(self):
+        """When user changes deck overhang, recalculate number of girders"""
+        if not self.updating_fields:
+            try:
+                overall_width = self.get_overall_bridge_width()
+                overhang_text = self.deck_overhang.text()
+                if overhang_text:
+                    overhang = float(overhang_text)
+                    if overhang >= overall_width:
+                        QMessageBox.warning(self, "Invalid Deck Overhang", 
+                            f"Deck overhang ({overhang:.2f} m) must be less than overall bridge width ({overall_width:.2f} m).")
+                        return
+                self.recalculate_girders()
+            except:
+                pass
+    
+    def on_no_of_girders_changed(self):
+        """When user changes number of girders, recalculate girder spacing"""
+        if not self.updating_fields:
+            try:
+                no_girders_text = self.no_of_girders.text()
+                if no_girders_text:
+                    no_girders = int(no_girders_text)
+                    if no_girders < 2:
+                        QMessageBox.warning(self, "Invalid Number of Girders", 
+                            "Number of girders must be at least 2.")
+                        return
+                    
+                    overall_width = self.get_overall_bridge_width()
+                    overhang = float(self.deck_overhang.text()) if self.deck_overhang.text() else DEFAULT_DECK_OVERHANG
+                    
+                    # Calculate spacing: Spacing = (Overall Width - 2*Overhang) / (No. of Girders - 1)
+                    if no_girders > 1:
+                        new_spacing = (overall_width - 2 * overhang) / (no_girders - 1)
+                        self.updating_fields = True
+                        self.girder_spacing.setText(f"{new_spacing:.3f}")
+                        self.updating_fields = False
+            except:
+                pass
+    
+    def on_footpath_width_changed(self):
+        """When footpath width changes, recalculate girders"""
+        if not self.updating_fields:
+            self.recalculate_girders()
+    
+    def validate_footpath_width(self):
+        """Validate footpath width meets minimum IRC 5 requirements"""
+        try:
+            if self.footpath_width.text():
+                width = float(self.footpath_width.text())
+                if width < MIN_FOOTPATH_WIDTH:
+                    QMessageBox.critical(self, "Footpath Width Error", 
+                        f"Footpath width must be at least {MIN_FOOTPATH_WIDTH} m as per IRC 5 Clause 104.3.6.")
+        except:
+            pass
+    
+    def validate_railing_height(self):
+        """Validate railing height meets minimum IRC 5 requirements"""
+        try:
+            if self.railing_height.text():
+                height = float(self.railing_height.text())
+                if height < MIN_RAILING_HEIGHT:
+                    QMessageBox.critical(self, "Railing Height Error", 
+                        f"Railing height must be at least {MIN_RAILING_HEIGHT} m as per IRC 5 Clauses 109.7.2.3 and 109.7.2.4.")
+        except:
+            pass
+    
+    def validate_safety_kerb_width(self):
+        """Validate safety kerb width meets minimum IRC 5 requirements"""
+        try:
+            if self.safety_kerb_width.text():
+                width = float(self.safety_kerb_width.text())
+                if width < MIN_SAFETY_KERB_WIDTH:
+                    QMessageBox.critical(self, "Safety Kerb Width Error", 
+                        f"Safety kerb width must be at least {MIN_SAFETY_KERB_WIDTH} m (750 mm) as per IRC 5 Clause 101.41.")
         except:
             pass
     
@@ -403,20 +551,17 @@ class BridgeGeometryTab(QWidget):
     def on_crash_barrier_type_changed(self, barrier_type):
         """Warn if flexible/semi-rigid barrier without footpath"""
         if (barrier_type in ["Flexible", "Semi-Rigid"]) and (self.footpath_value == "None"):
-            QMessageBox.warning(
-                self,
-                "Crash Barrier Type Not Permitted",
-                f"{barrier_type} crash barriers are not permitted on bridges without an outer footpath per IRC 5 Clause 109.6.4.",
-                QMessageBox.Ok
-            )
+            QMessageBox.critical(self, "Crash Barrier Type Not Permitted", 
+                f"{barrier_type} crash barriers are not permitted on bridges without an outer footpath per IRC 5 Clause 109.6.4.")
 
 
 class AdditionalInputsWidget(QWidget):
     """Main widget for Additional Inputs with tabbed interface"""
     
-    def __init__(self, footpath_value="None", parent=None):
+    def __init__(self, footpath_value="None", carriageway_width=7.5, parent=None):
         super().__init__(parent)
         self.footpath_value = footpath_value
+        self.carriageway_width = carriageway_width
         self.init_ui()
     
     def init_ui(self):
@@ -450,7 +595,7 @@ class AdditionalInputsWidget(QWidget):
         """)
         
         # Sub-Tab 1: Bridge Geometry
-        self.bridge_geometry_tab = BridgeGeometryTab(self.footpath_value)
+        self.bridge_geometry_tab = BridgeGeometryTab(self.footpath_value, self.carriageway_width)
         self.tabs.addTab(self.bridge_geometry_tab, "Bridge Geometry")
         
         # Sub-Tab 2: Section Properties

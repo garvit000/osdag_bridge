@@ -190,6 +190,15 @@ DEFAULT_CONCRETE_DENSITY = 25.0  # kN/m³
 DEFAULT_STEEL_DENSITY = 78.5  # kN/m³
 DEFAULT_BEARING_LENGTH = 0.0  # mm
 
+# Bridge Geometry Validation Constants (IRC 5)
+MIN_FOOTPATH_WIDTH = 1.5  # meters (IRC 5 Clause 104.3.6)
+MIN_RAILING_HEIGHT = 1.0  # meters (IRC 5 Clauses 109.7.2.3 & 109.7.2.4)
+MIN_SAFETY_KERB_WIDTH = 0.75  # meters (IRC 5 Clause 101.41)
+DEFAULT_GIRDER_SPACING = 2.5  # meters (preliminary design assumption)
+DEFAULT_DECK_OVERHANG = 1.0  # meters (preliminary design assumption)
+DEFAULT_CRASH_BARRIER_WIDTH = 0.5  # meters (typical)
+DEFAULT_RAILING_WIDTH = 0.15  # meters (typical)
+
 def connectdb(table_name, popup=None):
     """Mock database connection - returns sample data"""
     if table_name == "Material":
