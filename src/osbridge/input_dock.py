@@ -1,12 +1,13 @@
 import sys
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
-    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog
+    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog, QDialog
 )
 from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator
 
 from common import *
+from additional_inputs import AdditionalInputsWidget
 
 
 class NoScrollComboBox(QComboBox):
@@ -55,13 +56,13 @@ def apply_field_style(widget):
             subcontrol-position: top right;
             width: 20px;
             border-left: 1px solid #c0c0c0;
-            background-color: #4a7ba7;
+            background-color: #e8e8e8;
         }
         QComboBox::down-arrow {
             image: none;
             border-left: 4px solid transparent;
             border-right: 4px solid transparent;
-            border-top: 6px solid white;
+            border-top: 6px solid #606060;
             margin-right: 5px;
         }
         QComboBox QAbstractItemView {
@@ -127,6 +128,8 @@ class InputDock(QWidget):
         self.structure_type_combo = None  # Store reference to structure type combo box
         self.project_location_combo = None  # Store reference to project location combo box
         self.custom_location_input = None  # Store reference to custom location text field
+        self.footpath_combo = None  # Store reference to footpath combo box
+        self.additional_inputs_window = None  # Store reference to additional inputs window
 
         self.setStyleSheet("background: transparent;")
         self.main_layout = QHBoxLayout(self)
@@ -262,6 +265,7 @@ class InputDock(QWidget):
             }
         """)
         additional_inputs_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        additional_inputs_btn.clicked.connect(self.show_additional_inputs)
         top_bar.addWidget(additional_inputs_btn)
         
         panel_layout.addLayout(top_bar)
@@ -371,9 +375,17 @@ class InputDock(QWidget):
                 
                 # Set default value for Footpath combo box
                 elif field[0] == KEY_FOOTPATH:
-                    # Set default to "None" (first item in VALUES_FOOTPATH)
+                    # Store reference and set default to "None" (first item in VALUES_FOOTPATH)
+                    self.footpath_combo = right
                     right.setCurrentIndex(0)
                     right.setToolTip("Select footpath configuration.\nIRC 5 Clause 101.41: Safety kerb required when footpath is not present.")
+                    # Connect to update additional inputs if open
+                    right.currentTextChanged.connect(self.on_footpath_changed)
+                
+                # Set default value for Deck Concrete Grade
+                elif field[0] == KEY_DECK_CONCRETE_GRADE_BASIC:
+                    right.setCurrentText("M25")  # Set default to M25
+                    right.setToolTip("Select concrete grade for bridge deck.\nMinimum M25 grade required for bridge deck construction.")
 
                 cur_box_form.addRow(left, right_aligned_widget(right))
             
@@ -409,7 +421,7 @@ class InputDock(QWidget):
                 if field[0] == KEY_SKEW_ANGLE:
                     right.setText(str(SKEW_ANGLE_DEFAULT))
                     right.setPlaceholderText(f"Default: {SKEW_ANGLE_DEFAULT}°")
-                    right.setToolTip(f"Skew angle of rolled beams or plate girders.\nIRC 5 Clause 105.3.3 recommends ≤ {SKEW_ANGLE_MAX}°")
+                    right.setToolTip(f"Skew angle of rolled beams or plate girders.\nIRC 24 (2010) requires detailed analysis when skew angle exceeds ±15°.\nRange: {SKEW_ANGLE_MIN}° to {SKEW_ANGLE_MAX}°")
                 elif field[0] == KEY_SPAN:
                     right.setPlaceholderText(f"Enter value between {SPAN_MIN}-{SPAN_MAX} m")
                     right.setToolTip(f"Total length of the steel girder bridge.\nMust be between {SPAN_MIN} m and {SPAN_MAX} m")
@@ -470,3 +482,32 @@ class InputDock(QWidget):
         h_scroll_area.setWidget(self.left_panel)
 
         left_layout.addWidget(h_scroll_area)
+    
+    def show_additional_inputs(self):
+        """Show Additional Inputs dialog"""
+        # Get current footpath value
+        footpath_value = self.footpath_combo.currentText() if self.footpath_combo else "None"
+        
+        # Create or show existing window
+        if self.additional_inputs_window is None or not self.additional_inputs_window.isVisible():
+            self.additional_inputs_window = QDialog(self)
+            self.additional_inputs_window.setWindowTitle("Additional Inputs - Manual Bridge Parameter Definition")
+            self.additional_inputs_window.resize(900, 700)
+            
+            layout = QVBoxLayout(self.additional_inputs_window)
+            layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Add the additional inputs widget
+            self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, self.additional_inputs_window)
+            layout.addWidget(self.additional_inputs_widget)
+            
+            self.additional_inputs_window.show()
+        else:
+            self.additional_inputs_window.raise_()
+            self.additional_inputs_window.activateWindow()
+    
+    def on_footpath_changed(self, footpath_value):
+        """Update additional inputs when footpath changes"""
+        if self.additional_inputs_window and self.additional_inputs_window.isVisible():
+            if hasattr(self, 'additional_inputs_widget'):
+                self.additional_inputs_widget.update_footpath_value(footpath_value)

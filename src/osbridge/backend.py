@@ -61,6 +61,9 @@ class BackendOsBridge:
         t14 = (KEY_DECK, KEY_DISP_DECK, TYPE_COMBOBOX, connectdb("Material"), True, 'No Validator')
         options_list.append(t14)
 
+        t15 = (KEY_DECK_CONCRETE_GRADE_BASIC, KEY_DISP_DECK_CONCRETE_GRADE, TYPE_COMBOBOX, VALUES_DECK_CONCRETE_GRADE, True, 'No Validator')
+        options_list.append(t15)
+
         return options_list
     
     def customized_input(self):
@@ -106,7 +109,7 @@ class BackendOsBridge:
             try:
                 angle = float(design_inputs[KEY_SKEW_ANGLE])
                 if angle < SKEW_ANGLE_MIN or angle > SKEW_ANGLE_MAX:
-                    errors.append(f"Skew Angle should be between {SKEW_ANGLE_MIN}° and {SKEW_ANGLE_MAX}° as per IRC 5 Clause 105.3.3. Current value: {angle}°")
+                    errors.append(f"Skew Angle must be between {SKEW_ANGLE_MIN}° and {SKEW_ANGLE_MAX}°. IRC 24 (2010) requires detailed analysis when skew angle exceeds ±15 degrees. No calculations will be performed. Current value: {angle}°")
             except (ValueError, TypeError):
                 errors.append("Skew Angle must be a valid number")
         
