@@ -1,5 +1,5 @@
 # Osdag Bridge
-## Overview:
+## Overview
 This repository contains the source code for Osdag bridge component of [Osdag](https://github.com/osdag-admin/Osdag).
 ## Technical Stack
 
@@ -21,4 +21,41 @@ OsBridge/
 │       └── resources/             # Images and resources
 ├── README.md
 └── requirements.txt
+```
+## Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- pip package manager
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/garvit000/osdag_bridge.git
+cd osdag_bridge
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### Dependencies
+```
+PySide6>=6.5.0
+```
+## Usage
+
+### Running the Application
+
+From the project root directory:
+```bash
+python src/osbridge/template_page.py
+```
+
+Or from within the osbridge directory:
+```bash
+cd src/osbridge
+python template_page.py
 ```
