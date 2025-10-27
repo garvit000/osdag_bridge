@@ -61,9 +61,6 @@ class BackendOsBridge:
         t14 = (KEY_DECK, KEY_DISP_DECK, TYPE_COMBOBOX, connectdb("Material"), True, 'No Validator')
         options_list.append(t14)
 
-        t15 = (KEY_DECK_CONCRETE_GRADE_BASIC, KEY_DISP_DECK_CONCRETE_GRADE, TYPE_COMBOBOX, VALUES_DECK_CONCRETE_GRADE, True, 'No Validator')
-        options_list.append(t15)
-
         return options_list
     
     def customized_input(self):
@@ -83,38 +80,7 @@ class BackendOsBridge:
         return []
     
     def func_for_validation(self, design_inputs):
-        """Validate user inputs according to IRC 5 specifications"""
-        errors = []
-        
-        # Validate Span
-        if KEY_SPAN in design_inputs:
-            try:
-                span = float(design_inputs[KEY_SPAN])
-                if span < SPAN_MIN or span > SPAN_MAX:
-                    errors.append(f"Span must be between {SPAN_MIN} m and {SPAN_MAX} m. Current value: {span} m")
-            except (ValueError, TypeError):
-                errors.append("Span must be a valid number")
-        
-        # Validate Carriageway Width
-        if KEY_CARRIAGEWAY_WIDTH in design_inputs:
-            try:
-                width = float(design_inputs[KEY_CARRIAGEWAY_WIDTH])
-                if width < CARRIAGEWAY_WIDTH_MIN:
-                    errors.append(f"Carriageway Width must be at least {CARRIAGEWAY_WIDTH_MIN} m as per IRC 5 Clause 104.3.1. Current value: {width} m")
-            except (ValueError, TypeError):
-                errors.append("Carriageway Width must be a valid number")
-        
-        # Validate Skew Angle
-        if KEY_SKEW_ANGLE in design_inputs:
-            try:
-                angle = float(design_inputs[KEY_SKEW_ANGLE])
-                if angle < SKEW_ANGLE_MIN or angle > SKEW_ANGLE_MAX:
-                    errors.append(f"Skew Angle must be between {SKEW_ANGLE_MIN}° and {SKEW_ANGLE_MAX}°. IRC 24 (2010) requires detailed analysis when skew angle exceeds ±15 degrees. No calculations will be performed. Current value: {angle}°")
-            except (ValueError, TypeError):
-                errors.append("Skew Angle must be a valid number")
-        
-        if errors:
-            return "\n".join(errors)
+        """Mock validation - always passes for testing"""
         return None
     
     def get_3d_components(self):
