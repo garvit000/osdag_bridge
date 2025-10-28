@@ -3,15 +3,140 @@ Additional Inputs Widget for Highway Bridge Design
 Provides detailed input fields for manual bridge parameter definition
 """
 import sys
+import base64
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
     QComboBox, QGroupBox, QFormLayout, QPushButton, QScrollArea,
-    QCheckBox, QMessageBox, QSizePolicy, QSpacerItem
+    QCheckBox, QMessageBox, QSizePolicy, QSpacerItem, QStackedWidget,
+    QFrame, QGridLayout
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 
 from common import *
+
+
+def get_dropdown_svg_icon():
+    """Return the SVG markup for styled dropdown arrows."""
+    return (
+        "<svg width=\"30\" height=\"28\" viewBox=\"0 0 30 28\" fill=\"none\" "
+        "xmlns=\"http://www.w3.org/2000/svg\">"
+        "<path d=\"M14.5833 17.875L20.4167 12.375H8.75L14.5833 17.875Z\" fill=\"black\"/>"
+        "<path d=\"M14.5833 27.5C12.566 27.5 10.6701 27.1391 8.89583 26.4172C7.12153 25.6953 "
+        "5.57812 24.7156 4.26562 23.4781C2.95312 22.2406 1.91406 20.7854 1.14844 19.1125C0.382812 "
+        "17.4396 0 15.6521 0 13.75C0 11.8479 0.382812 10.0604 1.14844 8.3875C1.91406 6.71458 2.95312 "
+        "5.25938 4.26562 4.02187C5.57812 2.78437 7.12153 1.80469 8.89583 1.08281C10.6701 0.360938 12.566 "
+        "0 14.5833 0C16.6007 0 18.4965 0.360938 20.2708 1.08281C22.0451 1.80469 23.5885 2.78437 24.901 4.02187C26.2135 "
+        "5.25938 27.2526 6.71458 28.0182 8.3875C28.7839 10.0604 29.1667 11.8479 29.1667 13.75C29.1667 15.6521 28.7839 17.4396 "
+        "28.0182 19.1125C27.2526 20.7854 26.2135 22.2406 24.901 23.4781C23.5885 24.7156 22.0451 25.6953 20.2708 26.4172C18.4965 "
+        "27.1391 16.6007 27.5 14.5833 27.5ZM14.5833 24.75C17.8403 24.75 20.599 23.6844 22.8594 21.5531C25.1198 19.4219 26.25 "
+        "16.8208 26.25 13.75C26.25 10.6792 25.1198 8.07812 22.8594 5.94688C20.599 3.81563 17.8403 2.75 14.5833 2.75C11.3264 2.75 "
+        "8.56771 3.81563 6.30729 5.94688C4.04688 8.07812 2.91667 10.6792 2.91667 13.75C2.91667 16.8208 4.04688 19.4219 6.30729 "
+        "21.5531C8.56771 23.6844 11.3264 24.75 14.5833 24.75Z\" fill=\"black\"/>"
+        "</svg>"
+    )
+
+
+def get_combobox_style():
+    """Return the common stylesheet for dropdowns with the SVG icon."""
+    svg_data = get_dropdown_svg_icon().encode("utf-8")
+    svg_base64 = base64.b64encode(svg_data).decode("utf-8")
+    return f"""
+        QComboBox {{
+            padding: 6px 42px 6px 14px;
+            border: 1px solid #b8b8b8;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #2b2b2b;
+            font-size: 12px;
+            min-height: 34px;
+        }}
+        QComboBox:hover {{
+            border: 1px solid #909090;
+        }}
+        QComboBox:focus {{
+            border: 1px solid #4a7ba7;
+        }}
+        QComboBox::drop-down {{
+            subcontrol-origin: padding;
+            subcontrol-position: center right;
+            width: 30px;
+            border: none;
+            background: transparent;
+            right: 8px;
+        }}
+        QComboBox::down-arrow {{
+            image: url(data:image/svg+xml;base64,{svg_base64});
+            width: 26px;
+            height: 26px;
+        }}
+        QComboBox QAbstractItemView {{
+            border: 1px solid #b8b8b8;
+            background: #ffffff;
+            selection-background-color: #e7f2ff;
+            selection-color: #1f1f1f;
+        }}
+        QComboBox QAbstractItemView::item {{
+            padding: 6px 10px;
+            font-size: 12px;
+        }}
+    """
+
+
+def get_lineedit_style():
+    """Return the shared stylesheet for line edits in the section inputs."""
+    return """
+        QLineEdit {
+            padding: 6px 12px;
+            border: 1px solid #b8b8b8;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #2b2b2b;
+            font-size: 12px;
+            min-height: 34px;
+        }
+        QLineEdit:hover {
+            border: 1px solid #909090;
+        }
+        QLineEdit:focus {
+            border: 1px solid #4a7ba7;
+        }
+        QLineEdit:disabled {
+            background-color: #f0f0f0;
+            color: #9b9b9b;
+        }
+    """
+
+
+def apply_field_style(widget):
+    """Apply the appropriate style to combo boxes and line edits."""
+    widget.setMinimumHeight(34)
+    if isinstance(widget, QComboBox):
+        widget.setStyleSheet(get_combobox_style())
+    elif isinstance(widget, QLineEdit):
+        widget.setStyleSheet(get_lineedit_style())
+
+
+SECTION_NAV_BUTTON_STYLE = """
+    QPushButton {
+        background-color: #f4f4f4;
+        border: 2px solid #d2d2d2;
+        border-radius: 12px;
+        padding: 20px 16px;
+        text-align: left;
+        font-weight: bold;
+        font-size: 12px;
+        color: #333333;
+    }
+    QPushButton:hover {
+        border-color: #b5b5b5;
+    }
+    QPushButton:checked {
+        background-color: #9ecb3d;
+        border-color: #7da523;
+        color: #ffffff;
+    }
+"""
 
 
 class OptimizableField(QWidget):
@@ -21,29 +146,36 @@ class OptimizableField(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(8)
         
         # Mode selector
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(VALUES_OPTIMIZATION_MODE)
-        self.mode_combo.setMaximumWidth(120)
+        self.mode_combo.setMinimumWidth(140)
+        self.mode_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         # Input field
         self.input_field = QLineEdit()
         self.input_field.setEnabled(False)  # Disabled by default for "Optimized"
+        self.input_field.setVisible(False)
+        self.input_field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         self.layout.addWidget(self.mode_combo)
         self.layout.addWidget(self.input_field)
         
         # Connect signal
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
+        self.on_mode_changed(self.mode_combo.currentText())
     
     def on_mode_changed(self, text):
         """Enable/disable input field based on selection"""
-        if text == "Optimized":
+        if text in ("Optimized", "All"):
             self.input_field.setEnabled(False)
             self.input_field.clear()
+            self.input_field.setVisible(False)
         else:
             self.input_field.setEnabled(True)
+            self.input_field.setVisible(True)
     
     def get_value(self):
         """Returns tuple of (mode, value)"""
@@ -64,75 +196,7 @@ class BridgeGeometryTab(QWidget):
     
     def style_input_field(self, field):
         """Apply consistent styling to input fields"""
-        field.setMinimumHeight(28)
-        if isinstance(field, QComboBox):
-            field.setStyleSheet("""
-                QComboBox {
-                    padding: 4px 8px;
-                    padding-right: 30px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QComboBox::drop-down {
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                    width: 18px;
-                    height: 18px;
-                    border: 1px solid #606060;
-                    border-radius: 9px;
-                    background-color: transparent;
-                    right: 5px;
-                }
-                QComboBox::drop-down:hover {
-                    background-color: #e0e0e0;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    width: 0;
-                    height: 0;
-                    border-left: 3px solid transparent;
-                    border-right: 3px solid transparent;
-                    border-top: 4px solid #606060;
-                }
-                QComboBox:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    border: 1px solid #c0c0c0;
-                    outline: none;
-                    selection-background-color: #e8f4ff;
-                }
-                QComboBox QAbstractItemView::item {
-                    color: black;
-                    background-color: white;
-                    padding: 4px;
-                    min-height: 20px;
-                }
-                QComboBox QAbstractItemView::item:hover {
-                    background-color: #e8f4ff;
-                    color: black;
-                }
-            """)
-        else:
-            field.setStyleSheet("""
-                QLineEdit {
-                    padding: 4px 8px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QLineEdit:disabled {
-                    background-color: #f0f0f0;
-                    color: #999;
-                }
-            """)
+        apply_field_style(field)
     
     def style_group_box(self, group_box):
         """Apply consistent styling to group boxes"""
@@ -564,53 +628,92 @@ class BridgeGeometryTab(QWidget):
 
 
 class SectionPropertiesTab(QWidget):
-    """Sub-tab for Section Properties with nested tabs for Girder, Stiffener, Cross-Bracing, and End Diaphragm"""
-    
+    """Sub-tab for Section Properties with custom navigation layout."""
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.nav_buttons = []
         self.init_ui()
-    
+
     def init_ui(self):
-        """Initialize the UI"""
+        """Initialize styled navigation and content panels."""
+        self.setStyleSheet("background-color: #f7f7f7;")
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        
-        # Create nested tab widget for different section types
-        self.section_tabs = QTabWidget()
-        self.section_tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #d0d0d0;
-                background: white;
-            }
-            QTabBar::tab {
-                background: #f0f0f0;
-                color: black;
-                border: 1px solid #d0d0d0;
-                padding: 6px 12px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: #A2EBB6;
-                color: black;
-                font-weight: bold;
-            }
-        """)
-        
-        # Add nested tabs
-        self.girder_tab = GirderDetailsTab()
-        self.section_tabs.addTab(self.girder_tab, "Girder Details")
-        
-        self.stiffener_tab = StiffenerDetailsTab()
-        self.section_tabs.addTab(self.stiffener_tab, "Stiffener Details")
-        
-        self.cross_bracing_tab = CrossBracingDetailsTab()
-        self.section_tabs.addTab(self.cross_bracing_tab, "Cross-Bracing Details")
-        
-        self.end_diaphragm_tab = EndDiaphragmDetailsTab()
-        self.section_tabs.addTab(self.end_diaphragm_tab, "End Diaphragm Details")
-        
-        main_layout.addWidget(self.section_tabs)
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(16)
+
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(22)
+        main_layout.addLayout(content_layout)
+
+        nav_frame = QFrame()
+        nav_frame.setObjectName("sectionNavFrame")
+        nav_frame.setFixedWidth(190)
+        nav_frame.setStyleSheet(
+            "QFrame#sectionNavFrame {"
+            " background-color: #f2f2f2;"
+            " border: 1px solid #d1d1d1;"
+            " border-radius: 16px;"
+            "}"
+        )
+        nav_layout = QVBoxLayout(nav_frame)
+        nav_layout.setContentsMargins(14, 20, 14, 20)
+        nav_layout.setSpacing(14)
+        content_layout.addWidget(nav_frame)
+
+        content_frame = QFrame()
+        content_frame.setObjectName("sectionContentFrame")
+        content_frame.setStyleSheet(
+            "QFrame#sectionContentFrame {"
+            " background-color: #ffffff;"
+            " border: 1px solid #c7c7c7;"
+            " border-radius: 18px;"
+            "}"
+        )
+        content_inner_layout = QVBoxLayout(content_frame)
+        content_inner_layout.setContentsMargins(30, 24, 30, 24)
+        content_inner_layout.setSpacing(0)
+
+        self.stack = QStackedWidget()
+        self.stack.setObjectName("sectionStack")
+        self.stack.setStyleSheet("QStackedWidget#sectionStack { background-color: transparent; }")
+        content_inner_layout.addWidget(self.stack)
+
+        content_layout.addWidget(content_frame, 1)
+        content_layout.setStretch(0, 0)
+        content_layout.setStretch(1, 1)
+
+        sections = [
+            ("Girder Details", GirderDetailsTab),
+            ("Stiffener Details", StiffenerDetailsTab),
+            ("Cross-Bracing Details", CrossBracingDetailsTab),
+            ("End Diaphragm Details", EndDiaphragmDetailsTab),
+        ]
+
+        for index, (title, widget_cls) in enumerate(sections):
+            button = QPushButton(f"{title}:")
+            button.setCheckable(True)
+            button.setCursor(Qt.PointingHandCursor)
+            button.setStyleSheet(SECTION_NAV_BUTTON_STYLE)
+            button.setMinimumHeight(86)
+            button.clicked.connect(lambda _checked, idx=index: self.switch_section(idx))
+            nav_layout.addWidget(button)
+            self.nav_buttons.append(button)
+
+            section_widget = widget_cls()
+            self.stack.addWidget(section_widget)
+
+        nav_layout.addStretch()
+
+        if self.nav_buttons:
+            self.nav_buttons[0].setChecked(True)
+            self.stack.setCurrentIndex(0)
+
+    def switch_section(self, index):
+        """Switch the stacked widget page and update navigation states."""
+        self.stack.setCurrentIndex(index)
+        for btn_index, button in enumerate(self.nav_buttons):
+            button.setChecked(btn_index == index)
 
 
 class GirderDetailsTab(QWidget):
@@ -618,52 +721,54 @@ class GirderDetailsTab(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.plate_rows = []
         self.init_ui()
     
     def init_ui(self):
         """Initialize the UI"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        
-        # Scroll area
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        
-        # Girder Type Selection
-        type_group = QGroupBox("Girder Type")
-        type_group.setStyleSheet(self.get_group_style())
-        type_layout = QVBoxLayout()
-        
-        type_row = QHBoxLayout()
-        type_label = QLabel("Girder Type:")
-        type_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        scroll.setStyleSheet(
+            "QScrollArea { border: none; background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+        main_layout.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        form_frame = QFrame()
+        form_frame.setStyleSheet("QFrame { background: transparent; }")
+        self.form_layout = QGridLayout(form_frame)
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_layout.setHorizontalSpacing(28)
+        self.form_layout.setVerticalSpacing(20)
+        self.form_layout.setColumnMinimumWidth(0, 220)
+        self.form_layout.setColumnStretch(1, 1)
+        container_layout.addWidget(form_frame)
+        container_layout.addStretch()
+
+        row = 0
+        self.girder_type_label = self.create_label("Girder Type:")
         self.girder_type_combo = QComboBox()
         self.girder_type_combo.addItems(VALUES_GIRDER_TYPE)
-        self.style_input_field(self.girder_type_combo)
-        type_row.addWidget(type_label)
-        type_row.addWidget(self.girder_type_combo)
-        type_row.addStretch()
-        type_layout.addLayout(type_row)
-        
-        type_group.setLayout(type_layout)
-        scroll_layout.addWidget(type_group)
-        
-        # IS Rolled Beam Section (visible when IS Standard Rolled Beam is selected)
-        self.is_beam_group = QGroupBox("IS Standard Rolled Beam Section")
-        self.is_beam_group.setStyleSheet(self.get_group_style())
-        is_beam_layout = QVBoxLayout()
-        
-        is_beam_row = QHBoxLayout()
-        is_beam_label = QLabel("Select IS Beam Section:")
-        is_beam_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.girder_type_combo)
+        self.form_layout.addWidget(self.girder_type_label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(self.girder_type_combo, row, 1)
+        row += 1
+
+        self.is_section_label = self.create_label("Select IS Beam Section:")
         self.is_beam_combo = QComboBox()
-        # Add sample IS sections - you can expand this list
         self.is_beam_combo.addItems([
             "Select Section",
             "ISMB 100", "ISMB 125", "ISMB 150", "ISMB 175", "ISMB 200",
@@ -672,242 +777,83 @@ class GirderDetailsTab(QWidget):
             "ISWB 150", "ISWB 175", "ISWB 200", "ISWB 225", "ISWB 250",
             "ISWB 300", "ISWB 350", "ISWB 400", "ISWB 450", "ISWB 500", "ISWB 550", "ISWB 600"
         ])
-        self.style_input_field(self.is_beam_combo)
-        is_beam_row.addWidget(is_beam_label)
-        is_beam_row.addWidget(self.is_beam_combo)
-        is_beam_row.addStretch()
-        is_beam_layout.addLayout(is_beam_row)
-        
-        self.is_beam_group.setLayout(is_beam_layout)
-        scroll_layout.addWidget(self.is_beam_group)
-        
-        # Plate Girder Section (visible when Plate Girder is selected)
-        self.plate_girder_group = QGroupBox("Plate Girder Details")
-        self.plate_girder_group.setStyleSheet(self.get_group_style())
-        plate_layout = QVBoxLayout()
-        
-        # Girder Symmetry
-        symmetry_row = QHBoxLayout()
-        symmetry_label = QLabel("Girder Symmetry:")
-        symmetry_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.is_beam_combo)
+        self.form_layout.addWidget(self.is_section_label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(self.is_beam_combo, row, 1)
+        row += 1
+
         self.symmetry_combo = QComboBox()
         self.symmetry_combo.addItems(VALUES_GIRDER_SYMMETRY)
-        self.style_input_field(self.symmetry_combo)
-        symmetry_row.addWidget(symmetry_label)
-        symmetry_row.addWidget(self.symmetry_combo)
-        symmetry_row.addStretch()
-        plate_layout.addLayout(symmetry_row)
-        
-        # Top Flange Width
-        top_width_row = QHBoxLayout()
-        top_width_label = QLabel("Top Flange Width (mm):")
-        top_width_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.symmetry_combo)
+        row = self.add_plate_row(row, "Girder Symmetry", self.symmetry_combo)
+
         self.top_width_field = OptimizableField("Top Flange Width")
-        self.style_input_field(self.top_width_field.mode_combo)
-        self.style_input_field(self.top_width_field.input_field)
-        top_width_row.addWidget(top_width_label)
-        top_width_row.addWidget(self.top_width_field)
-        top_width_row.addStretch()
-        plate_layout.addLayout(top_width_row)
-        
-        # Top Flange Thickness
-        top_thick_row = QHBoxLayout()
-        top_thick_label = QLabel("Top Flange Thickness (mm):")
-        top_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.top_width_field)
+        row = self.add_plate_row(row, "Top Flange Width (mm):", self.top_width_field)
+
         self.top_thick_field = OptimizableField("Top Flange Thickness")
-        self.style_input_field(self.top_thick_field.mode_combo)
-        self.style_input_field(self.top_thick_field.input_field)
-        top_thick_row.addWidget(top_thick_label)
-        top_thick_row.addWidget(self.top_thick_field)
-        top_thick_row.addStretch()
-        plate_layout.addLayout(top_thick_row)
-        
-        # Bottom Flange Width
-        bottom_width_row = QHBoxLayout()
-        bottom_width_label = QLabel("Bottom Flange Width (mm):")
-        bottom_width_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.top_thick_field)
+        row = self.add_plate_row(row, "Top Flange Thickness (mm):", self.top_thick_field)
+
         self.bottom_width_field = OptimizableField("Bottom Flange Width")
-        self.style_input_field(self.bottom_width_field.mode_combo)
-        self.style_input_field(self.bottom_width_field.input_field)
-        bottom_width_row.addWidget(bottom_width_label)
-        bottom_width_row.addWidget(self.bottom_width_field)
-        bottom_width_row.addStretch()
-        plate_layout.addLayout(bottom_width_row)
-        
-        # Bottom Flange Thickness
-        bottom_thick_row = QHBoxLayout()
-        bottom_thick_label = QLabel("Bottom Flange Thickness (mm):")
-        bottom_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.bottom_width_field)
+        row = self.add_plate_row(row, "Bottom Flange Width (mm):", self.bottom_width_field)
+
         self.bottom_thick_field = OptimizableField("Bottom Flange Thickness")
-        self.style_input_field(self.bottom_thick_field.mode_combo)
-        self.style_input_field(self.bottom_thick_field.input_field)
-        bottom_thick_row.addWidget(bottom_thick_label)
-        bottom_thick_row.addWidget(self.bottom_thick_field)
-        bottom_thick_row.addStretch()
-        plate_layout.addLayout(bottom_thick_row)
-        
-        # Depth of Section
-        depth_row = QHBoxLayout()
-        depth_label = QLabel("Depth of Section (mm):")
-        depth_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.bottom_thick_field)
+        row = self.add_plate_row(row, "Bottom Flange Thickness (mm):", self.bottom_thick_field)
+
         self.depth_field = OptimizableField("Depth of Section")
-        self.style_input_field(self.depth_field.mode_combo)
-        self.style_input_field(self.depth_field.input_field)
-        depth_row.addWidget(depth_label)
-        depth_row.addWidget(self.depth_field)
-        depth_row.addStretch()
-        plate_layout.addLayout(depth_row)
-        
-        # Web Thickness
-        web_thick_row = QHBoxLayout()
-        web_thick_label = QLabel("Web Thickness (mm):")
-        web_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.depth_field)
+        row = self.add_plate_row(row, "Depth of Section (mm):", self.depth_field)
+
         self.web_thick_field = OptimizableField("Web Thickness")
-        self.style_input_field(self.web_thick_field.mode_combo)
-        self.style_input_field(self.web_thick_field.input_field)
-        web_thick_row.addWidget(web_thick_label)
-        web_thick_row.addWidget(self.web_thick_field)
-        web_thick_row.addStretch()
-        plate_layout.addLayout(web_thick_row)
-        
-        # Torsional Restraint
-        torsion_row = QHBoxLayout()
-        torsion_label = QLabel("Torsional Restraint:")
-        torsion_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.web_thick_field)
+        row = self.add_plate_row(row, "Web Thickness (mm):", self.web_thick_field)
+
         self.torsion_combo = QComboBox()
         self.torsion_combo.addItems(VALUES_TORSIONAL_RESTRAINT)
-        self.style_input_field(self.torsion_combo)
-        torsion_row.addWidget(torsion_label)
-        torsion_row.addWidget(self.torsion_combo)
-        torsion_row.addStretch()
-        plate_layout.addLayout(torsion_row)
-        
-        # Warping Restraint
-        warp_row = QHBoxLayout()
-        warp_label = QLabel("Warping Restraint:")
-        warp_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.torsion_combo)
+        row = self.add_plate_row(row, "Torsional Restraint:", self.torsion_combo)
+
         self.warp_combo = QComboBox()
         self.warp_combo.addItems(VALUES_WARPING_RESTRAINT)
-        self.style_input_field(self.warp_combo)
-        warp_row.addWidget(warp_label)
-        warp_row.addWidget(self.warp_combo)
-        warp_row.addStretch()
-        plate_layout.addLayout(warp_row)
-        
-        # Web Type
-        web_type_row = QHBoxLayout()
-        web_type_label = QLabel("Web Type:")
-        web_type_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.warp_combo)
+        row = self.add_plate_row(row, "Warping Restraint:", self.warp_combo)
+
         self.web_type_combo = QComboBox()
         self.web_type_combo.addItems(VALUES_WEB_TYPE)
-        self.style_input_field(self.web_type_combo)
-        web_type_row.addWidget(web_type_label)
-        web_type_row.addWidget(self.web_type_combo)
-        web_type_row.addStretch()
-        plate_layout.addLayout(web_type_row)
-        
-        self.plate_girder_group.setLayout(plate_layout)
-        scroll_layout.addWidget(self.plate_girder_group)
-        
-        scroll_layout.addStretch()
-        scroll.setWidget(scroll_widget)
-        main_layout.addWidget(scroll)
-        
-        # Connect signals
+        apply_field_style(self.web_type_combo)
+        row = self.add_plate_row(row, "Web Type* :", self.web_type_combo)
+
         self.girder_type_combo.currentTextChanged.connect(self.on_girder_type_changed)
-        
-        # Initialize visibility
         self.on_girder_type_changed(self.girder_type_combo.currentText())
-    
+
+    def create_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 13px; color: #2f2f2f; font-weight: 600;")
+        return label
+
+    def prepare_optimizable_field(self, field):
+        field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        apply_field_style(field.mode_combo)
+        apply_field_style(field.input_field)
+
+    def add_plate_row(self, row, text, widget):
+        label = self.create_label(text)
+        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.form_layout.addWidget(label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(widget, row, 1)
+        self.plate_rows.append((label, widget))
+        return row + 1
+
     def on_girder_type_changed(self, text):
-        """Show/hide sections based on girder type"""
-        if text == "IS Standard Rolled Beam":
-            self.is_beam_group.setVisible(True)
-            self.plate_girder_group.setVisible(False)
-        else:  # Plate Girder
-            self.is_beam_group.setVisible(False)
-            self.plate_girder_group.setVisible(True)
-    
-    def style_input_field(self, field):
-        """Apply consistent styling to input fields"""
-        field.setMinimumHeight(28)
-        if isinstance(field, QComboBox):
-            field.setStyleSheet("""
-                QComboBox {
-                    padding: 4px 8px;
-                    padding-right: 30px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QComboBox::drop-down {
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                    width: 18px;
-                    height: 18px;
-                    border: 1px solid #606060;
-                    border-radius: 9px;
-                    background-color: transparent;
-                    right: 5px;
-                }
-                QComboBox::drop-down:hover {
-                    background-color: #e0e0e0;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    width: 0;
-                    height: 0;
-                    border-left: 3px solid transparent;
-                    border-right: 3px solid transparent;
-                    border-top: 4px solid #606060;
-                }
-                QComboBox:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    border: 1px solid #c0c0c0;
-                    selection-background-color: #e8f4ff;
-                }
-            """)
-        elif isinstance(field, QLineEdit):
-            field.setStyleSheet("""
-                QLineEdit {
-                    padding: 4px 8px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QLineEdit:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-            """)
-    
-    def get_group_style(self):
-        """Return consistent group box styling"""
-        return """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 11px;
-                border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #fafafa;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 5px;
-                background-color: white;
-            }
-        """
+        is_standard = text == "IS Standard Rolled Beam"
+        self.is_section_label.setVisible(is_standard)
+        self.is_beam_combo.setVisible(is_standard)
+        for label, widget in self.plate_rows:
+            label.setVisible(not is_standard)
+            widget.setVisible(not is_standard)
 
 
 class StiffenerDetailsTab(QWidget):
@@ -918,186 +864,89 @@ class StiffenerDetailsTab(QWidget):
         self.init_ui()
     
     def init_ui(self):
-        """Initialize the UI"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        
-        # Scroll area
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        
-        # Stiffener Details Group
-        stiff_group = QGroupBox("Stiffener Configuration")
-        stiff_group.setStyleSheet(self.get_group_style())
-        stiff_layout = QVBoxLayout()
-        
-        # Design Method
-        method_row = QHBoxLayout()
-        method_label = QLabel("Stiffener Design Method:")
-        method_label.setStyleSheet("font-size: 11px; min-width: 220px;")
+        scroll.setStyleSheet(
+            "QScrollArea { border: none; background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+        main_layout.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        form_frame = QFrame()
+        form_frame.setStyleSheet("QFrame { background: transparent; }")
+        self.form_layout = QGridLayout(form_frame)
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_layout.setHorizontalSpacing(28)
+        self.form_layout.setVerticalSpacing(20)
+        self.form_layout.setColumnMinimumWidth(0, 240)
+        self.form_layout.setColumnStretch(1, 1)
+        container_layout.addWidget(form_frame)
+        container_layout.addStretch()
+
+        row = 0
         self.method_combo = QComboBox()
         self.method_combo.addItems(VALUES_STIFFENER_DESIGN)
-        self.style_input_field(self.method_combo)
-        method_row.addWidget(method_label)
-        method_row.addWidget(self.method_combo)
-        method_row.addStretch()
-        stiff_layout.addLayout(method_row)
-        
-        # Stiffener Plate Thickness
-        thick_row = QHBoxLayout()
-        thick_label = QLabel("Stiffener Plate Thickness (mm):")
-        thick_label.setStyleSheet("font-size: 11px; min-width: 220px;")
+        apply_field_style(self.method_combo)
+        row = self.add_row(row, "Stiffener design method:", self.method_combo)
+
         self.thick_combo = QComboBox()
         self.thick_combo.addItems(["Optimized", "All"])
-        self.style_input_field(self.thick_combo)
-        thick_row.addWidget(thick_label)
-        thick_row.addWidget(self.thick_combo)
-        thick_row.addStretch()
-        stiff_layout.addLayout(thick_row)
-        
-        # Stiffener Spacing
-        spacing_row = QHBoxLayout()
-        spacing_label = QLabel("Stiffener Spacing (mm):")
-        spacing_label.setStyleSheet("font-size: 11px; min-width: 220px;")
+        apply_field_style(self.thick_combo)
+        row = self.add_row(row, "Stiffener Plate Thickness (mm):", self.thick_combo)
+
         self.spacing_field = OptimizableField("Stiffener Spacing")
         self.spacing_field.mode_combo.clear()
         self.spacing_field.mode_combo.addItems(["Optimized", "Customized"])
-        self.style_input_field(self.spacing_field.mode_combo)
-        self.style_input_field(self.spacing_field.input_field)
-        spacing_row.addWidget(spacing_label)
-        spacing_row.addWidget(self.spacing_field)
-        spacing_row.addStretch()
-        stiff_layout.addLayout(spacing_row)
-        
-        # Longitudinal Stiffener Requirement
-        long_req_row = QHBoxLayout()
-        long_req_label = QLabel("Longitudinal Stiffener Requirement:")
-        long_req_label.setStyleSheet("font-size: 11px; min-width: 220px;")
+        self.spacing_field.on_mode_changed(self.spacing_field.mode_combo.currentText())
+        self.prepare_optimizable_field(self.spacing_field)
+        row = self.add_row(row, "Stiffener Spacing (mm):", self.spacing_field)
+
         self.long_req_combo = QComboBox()
         self.long_req_combo.addItems(VALUES_YES_NO)
-        self.style_input_field(self.long_req_combo)
-        long_req_row.addWidget(long_req_label)
-        long_req_row.addWidget(self.long_req_combo)
-        long_req_row.addStretch()
-        stiff_layout.addLayout(long_req_row)
-        
-        # Longitudinal Stiffener Thickness
-        long_thick_row = QHBoxLayout()
-        long_thick_label = QLabel("Longitudinal Stiffener Thickness (mm):")
-        long_thick_label.setStyleSheet("font-size: 11px; min-width: 220px;")
+        apply_field_style(self.long_req_combo)
+        row = self.add_row(row, "Longitudinal stiffener requirement:", self.long_req_combo)
+
         self.long_thick_combo = QComboBox()
         self.long_thick_combo.addItems(["Optimized", "All"])
-        self.long_thick_combo.setEnabled(False)  # Disabled by default
-        self.style_input_field(self.long_thick_combo)
-        long_thick_row.addWidget(long_thick_label)
-        long_thick_row.addWidget(self.long_thick_combo)
-        long_thick_row.addStretch()
-        stiff_layout.addLayout(long_thick_row)
-        
-        stiff_group.setLayout(stiff_layout)
-        scroll_layout.addWidget(stiff_group)
-        
-        scroll_layout.addStretch()
-        scroll.setWidget(scroll_widget)
-        main_layout.addWidget(scroll)
-        
-        # Connect signals
+        self.long_thick_combo.setEnabled(False)
+        apply_field_style(self.long_thick_combo)
+        self.add_row(row, "Longitudinal stiffener thickness:", self.long_thick_combo)
+
         self.long_req_combo.currentTextChanged.connect(self.on_long_req_changed)
-    
+
+    def create_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 13px; color: #2f2f2f; font-weight: 600;")
+        return label
+
+    def add_row(self, row, text, widget):
+        label = self.create_label(text)
+        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.form_layout.addWidget(label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(widget, row, 1)
+        return row + 1
+
+    def prepare_optimizable_field(self, field):
+        field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        apply_field_style(field.mode_combo)
+        apply_field_style(field.input_field)
+
     def on_long_req_changed(self, text):
         """Enable/disable longitudinal stiffener thickness based on requirement"""
         self.long_thick_combo.setEnabled(text == "Yes")
-    
-    def style_input_field(self, field):
-        """Apply consistent styling to input fields"""
-        field.setMinimumHeight(28)
-        if isinstance(field, QComboBox):
-            field.setStyleSheet("""
-                QComboBox {
-                    padding: 4px 8px;
-                    padding-right: 30px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QComboBox::drop-down {
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                    width: 18px;
-                    height: 18px;
-                    border: 1px solid #606060;
-                    border-radius: 9px;
-                    background-color: transparent;
-                    right: 5px;
-                }
-                QComboBox::drop-down:hover {
-                    background-color: #e0e0e0;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    width: 0;
-                    height: 0;
-                    border-left: 3px solid transparent;
-                    border-right: 3px solid transparent;
-                    border-top: 4px solid #606060;
-                }
-                QComboBox:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QComboBox:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    border: 1px solid #c0c0c0;
-                    selection-background-color: #e8f4ff;
-                }
-            """)
-        elif isinstance(field, QLineEdit):
-            field.setStyleSheet("""
-                QLineEdit {
-                    padding: 4px 8px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QLineEdit:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-            """)
-    
-    def get_group_style(self):
-        """Return consistent group box styling"""
-        return """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 11px;
-                border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #fafafa;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 5px;
-                background-color: white;
-            }
-        """
 
 
 class CrossBracingDetailsTab(QWidget):
@@ -1108,41 +957,44 @@ class CrossBracingDetailsTab(QWidget):
         self.init_ui()
     
     def init_ui(self):
-        """Initialize the UI"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        
-        # Scroll area
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        
-        # Cross-Bracing Group
-        bracing_group = QGroupBox("Cross-Bracing Configuration")
-        bracing_group.setStyleSheet(self.get_group_style())
-        bracing_layout = QVBoxLayout()
-        
-        # Type of Bracing
-        type_row = QHBoxLayout()
-        type_label = QLabel("Type of Bracing:")
-        type_label.setStyleSheet("font-size: 11px; min-width: 180px;")
+        scroll.setStyleSheet(
+            "QScrollArea { border: none; background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+        main_layout.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        form_frame = QFrame()
+        form_frame.setStyleSheet("QFrame { background: transparent; }")
+        self.form_layout = QGridLayout(form_frame)
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_layout.setHorizontalSpacing(28)
+        self.form_layout.setVerticalSpacing(20)
+        self.form_layout.setColumnMinimumWidth(0, 210)
+        self.form_layout.setColumnStretch(1, 1)
+        container_layout.addWidget(form_frame)
+        container_layout.addStretch()
+
+        row = 0
         self.type_combo = QComboBox()
         self.type_combo.addItems(VALUES_CROSS_BRACING_TYPE)
-        self.style_input_field(self.type_combo)
-        type_row.addWidget(type_label)
-        type_row.addWidget(self.type_combo)
-        type_row.addStretch()
-        bracing_layout.addLayout(type_row)
-        
-        # Bracing Section
-        section_row = QHBoxLayout()
-        section_label = QLabel("Bracing Section:")
-        section_label.setStyleSheet("font-size: 11px; min-width: 180px;")
+        apply_field_style(self.type_combo)
+        row = self.add_row(row, "Type of Bracing:", self.type_combo)
+
         self.section_combo = QComboBox()
         self.section_combo.addItems([
             "Select Section",
@@ -1153,16 +1005,9 @@ class CrossBracingDetailsTab(QWidget):
             "ISMC 75", "ISMC 100", "ISMC 125", "ISMC 150",
             "2-ISMC 75", "2-ISMC 100", "2-ISMC 125"
         ])
-        self.style_input_field(self.section_combo)
-        section_row.addWidget(section_label)
-        section_row.addWidget(self.section_combo)
-        section_row.addStretch()
-        bracing_layout.addLayout(section_row)
-        
-        # Bracket Section
-        self.bracket_row = QHBoxLayout()
-        bracket_label = QLabel("Bracket Section:")
-        bracket_label.setStyleSheet("font-size: 11px; min-width: 180px;")
+        apply_field_style(self.section_combo)
+        row = self.add_row(row, "Bracing Section:", self.section_combo)
+
         self.bracket_combo = QComboBox()
         self.bracket_combo.addItems([
             "Select Section",
@@ -1173,125 +1018,34 @@ class CrossBracingDetailsTab(QWidget):
             "ISMC 75", "ISMC 100", "ISMC 125",
             "2-ISMC 75", "2-ISMC 100"
         ])
-        self.bracket_combo.setEnabled(False)  # Disabled by default
-        self.style_input_field(self.bracket_combo)
-        self.bracket_row.addWidget(bracket_label)
-        self.bracket_row.addWidget(self.bracket_combo)
-        self.bracket_row.addStretch()
-        bracing_layout.addLayout(self.bracket_row)
-        
-        # Spacing
-        spacing_row = QHBoxLayout()
-        spacing_label = QLabel("Spacing (mm):")
-        spacing_label.setStyleSheet("font-size: 11px; min-width: 180px;")
+        self.bracket_combo.setEnabled(False)
+        apply_field_style(self.bracket_combo)
+        row = self.add_row(row, "Bracket Section:", self.bracket_combo)
+
         self.spacing_input = QLineEdit()
         self.spacing_input.setPlaceholderText("Enter spacing in mm")
         self.spacing_input.setValidator(QDoubleValidator(0, 100000, 2))
-        self.style_input_field(self.spacing_input)
-        spacing_row.addWidget(spacing_label)
-        spacing_row.addWidget(self.spacing_input)
-        spacing_row.addStretch()
-        bracing_layout.addLayout(spacing_row)
-        
-        bracing_group.setLayout(bracing_layout)
-        scroll_layout.addWidget(bracing_group)
-        
-        scroll_layout.addStretch()
-        scroll.setWidget(scroll_widget)
-        main_layout.addWidget(scroll)
-        
-        # Connect signals
+        apply_field_style(self.spacing_input)
+        self.add_row(row, "Spacing (mm):", self.spacing_input)
+
         self.type_combo.currentTextChanged.connect(self.on_bracing_type_changed)
-    
+
+    def create_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 13px; color: #2f2f2f; font-weight: 600;")
+        return label
+
+    def add_row(self, row, text, widget):
+        label = self.create_label(text)
+        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.form_layout.addWidget(label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(widget, row, 1)
+        return row + 1
+
     def on_bracing_type_changed(self, text):
         """Enable/disable bracket section based on bracing type"""
         has_bracket = "bracket" in text.lower()
         self.bracket_combo.setEnabled(has_bracket)
-    
-    def style_input_field(self, field):
-        """Apply consistent styling to input fields"""
-        field.setMinimumHeight(28)
-        if isinstance(field, QComboBox):
-            field.setStyleSheet("""
-                QComboBox {
-                    padding: 4px 8px;
-                    padding-right: 30px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QComboBox::drop-down {
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                    width: 18px;
-                    height: 18px;
-                    border: 1px solid #606060;
-                    border-radius: 9px;
-                    background-color: transparent;
-                    right: 5px;
-                }
-                QComboBox::drop-down:hover {
-                    background-color: #e0e0e0;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    width: 0;
-                    height: 0;
-                    border-left: 3px solid transparent;
-                    border-right: 3px solid transparent;
-                    border-top: 4px solid #606060;
-                }
-                QComboBox:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QComboBox:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    border: 1px solid #c0c0c0;
-                    selection-background-color: #e8f4ff;
-                }
-            """)
-        elif isinstance(field, QLineEdit):
-            field.setStyleSheet("""
-                QLineEdit {
-                    padding: 4px 8px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QLineEdit:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-            """)
-    
-    def get_group_style(self):
-        """Return consistent group box styling"""
-        return """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 11px;
-                border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #fafafa;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 5px;
-                background-color: white;
-            }
-        """
 
 
 class EndDiaphragmDetailsTab(QWidget):
@@ -1299,51 +1053,51 @@ class EndDiaphragmDetailsTab(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.plate_rows = []
         self.init_ui()
     
     def init_ui(self):
-        """Initialize the UI"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        
-        # Scroll area
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(15)
-        
-        # End Diaphragm Group
-        diaphragm_group = QGroupBox("End Diaphragm Configuration")
-        diaphragm_group.setStyleSheet(self.get_group_style())
-        diaphragm_layout = QVBoxLayout()
-        
-        # Type of Section
-        type_row = QHBoxLayout()
-        type_label = QLabel("Type of Section:")
-        type_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        scroll.setStyleSheet(
+            "QScrollArea { border: none; background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+        main_layout.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        form_frame = QFrame()
+        form_frame.setStyleSheet("QFrame { background: transparent; }")
+        self.form_layout = QGridLayout(form_frame)
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_layout.setHorizontalSpacing(28)
+        self.form_layout.setVerticalSpacing(20)
+        self.form_layout.setColumnMinimumWidth(0, 230)
+        self.form_layout.setColumnStretch(1, 1)
+        container_layout.addWidget(form_frame)
+        container_layout.addStretch()
+
+        row = 0
         self.type_combo = QComboBox()
         self.type_combo.addItems(VALUES_END_DIAPHRAGM_TYPE)
-        self.style_input_field(self.type_combo)
-        type_row.addWidget(type_label)
-        type_row.addWidget(self.type_combo)
-        type_row.addStretch()
-        diaphragm_layout.addLayout(type_row)
-        
-        diaphragm_group.setLayout(diaphragm_layout)
-        scroll_layout.addWidget(diaphragm_group)
-        
-        # IS Rolled Beam Section
-        self.is_beam_group = QGroupBox("IS Standard Rolled Beam Section")
-        self.is_beam_group.setStyleSheet(self.get_group_style())
-        is_beam_layout = QVBoxLayout()
-        
-        is_beam_row = QHBoxLayout()
-        is_beam_label = QLabel("Select IS Beam Section:")
-        is_beam_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.type_combo)
+        self.form_layout.addWidget(self.create_label("Type of Section:"), row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(self.type_combo, row, 1)
+        row += 1
+
+        self.is_section_label = self.create_label("Select IS Beam Section:")
         self.is_beam_combo = QComboBox()
         self.is_beam_combo.addItems([
             "Select Section",
@@ -1352,217 +1106,84 @@ class EndDiaphragmDetailsTab(QWidget):
             "ISWB 150", "ISWB 175", "ISWB 200", "ISWB 225", "ISWB 250",
             "ISWB 300", "ISWB 350", "ISWB 400"
         ])
-        self.style_input_field(self.is_beam_combo)
-        is_beam_row.addWidget(is_beam_label)
-        is_beam_row.addWidget(self.is_beam_combo)
-        is_beam_row.addStretch()
-        is_beam_layout.addLayout(is_beam_row)
-        
-        self.is_beam_group.setLayout(is_beam_layout)
-        scroll_layout.addWidget(self.is_beam_group)
-        
-        # Plate Girder Section
-        self.plate_girder_group = QGroupBox("Plate Girder Details")
-        self.plate_girder_group.setStyleSheet(self.get_group_style())
-        plate_layout = QVBoxLayout()
-        
-        # Top Flange Width
-        top_width_row = QHBoxLayout()
-        top_width_label = QLabel("Top Flange Width (mm):")
-        top_width_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        apply_field_style(self.is_beam_combo)
+        self.form_layout.addWidget(self.is_section_label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(self.is_beam_combo, row, 1)
+        row += 1
+
         self.top_width_field = OptimizableField("Top Flange Width")
-        self.style_input_field(self.top_width_field.mode_combo)
-        self.style_input_field(self.top_width_field.input_field)
-        top_width_row.addWidget(top_width_label)
-        top_width_row.addWidget(self.top_width_field)
-        top_width_row.addStretch()
-        plate_layout.addLayout(top_width_row)
-        
-        # Top Flange Thickness
-        top_thick_row = QHBoxLayout()
-        top_thick_label = QLabel("Top Flange Thickness (mm):")
-        top_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.top_width_field)
+        row = self.add_plate_row(row, "Top Flange Width (mm):", self.top_width_field)
+
         self.top_thick_field = OptimizableField("Top Flange Thickness")
-        self.style_input_field(self.top_thick_field.mode_combo)
-        self.style_input_field(self.top_thick_field.input_field)
-        top_thick_row.addWidget(top_thick_label)
-        top_thick_row.addWidget(self.top_thick_field)
-        top_thick_row.addStretch()
-        plate_layout.addLayout(top_thick_row)
-        
-        # Bottom Flange Width
-        bottom_width_row = QHBoxLayout()
-        bottom_width_label = QLabel("Bottom Flange Width (mm):")
-        bottom_width_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.top_thick_field)
+        row = self.add_plate_row(row, "Top Flange Thickness (mm):", self.top_thick_field)
+
         self.bottom_width_field = OptimizableField("Bottom Flange Width")
-        self.style_input_field(self.bottom_width_field.mode_combo)
-        self.style_input_field(self.bottom_width_field.input_field)
-        bottom_width_row.addWidget(bottom_width_label)
-        bottom_width_row.addWidget(self.bottom_width_field)
-        bottom_width_row.addStretch()
-        plate_layout.addLayout(bottom_width_row)
-        
-        # Bottom Flange Thickness
-        bottom_thick_row = QHBoxLayout()
-        bottom_thick_label = QLabel("Bottom Flange Thickness (mm):")
-        bottom_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.bottom_width_field)
+        row = self.add_plate_row(row, "Bottom Flange Width (mm):", self.bottom_width_field)
+
         self.bottom_thick_field = OptimizableField("Bottom Flange Thickness")
-        self.style_input_field(self.bottom_thick_field.mode_combo)
-        self.style_input_field(self.bottom_thick_field.input_field)
-        bottom_thick_row.addWidget(bottom_thick_label)
-        bottom_thick_row.addWidget(self.bottom_thick_field)
-        bottom_thick_row.addStretch()
-        plate_layout.addLayout(bottom_thick_row)
-        
-        # Depth of Section
-        depth_row = QHBoxLayout()
-        depth_label = QLabel("Depth of Section (mm):")
-        depth_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.bottom_thick_field)
+        row = self.add_plate_row(row, "Bottom Flange Thickness (mm):", self.bottom_thick_field)
+
         self.depth_field = OptimizableField("Depth of Section")
-        self.style_input_field(self.depth_field.mode_combo)
-        self.style_input_field(self.depth_field.input_field)
-        depth_row.addWidget(depth_label)
-        depth_row.addWidget(self.depth_field)
-        depth_row.addStretch()
-        plate_layout.addLayout(depth_row)
-        
-        # Web Thickness
-        web_thick_row = QHBoxLayout()
-        web_thick_label = QLabel("Web Thickness (mm):")
-        web_thick_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.depth_field)
+        row = self.add_plate_row(row, "Depth of Section (mm):", self.depth_field)
+
         self.web_thick_field = OptimizableField("Web Thickness")
-        self.style_input_field(self.web_thick_field.mode_combo)
-        self.style_input_field(self.web_thick_field.input_field)
-        web_thick_row.addWidget(web_thick_label)
-        web_thick_row.addWidget(self.web_thick_field)
-        web_thick_row.addStretch()
-        plate_layout.addLayout(web_thick_row)
-        
-        self.plate_girder_group.setLayout(plate_layout)
-        scroll_layout.addWidget(self.plate_girder_group)
-        
-        # Spacing
-        spacing_group = QGroupBox("Spacing")
-        spacing_group.setStyleSheet(self.get_group_style())
-        spacing_layout = QVBoxLayout()
-        
-        spacing_row = QHBoxLayout()
-        spacing_label = QLabel("Spacing (mm):")
-        spacing_label.setStyleSheet("font-size: 11px; min-width: 200px;")
+        self.prepare_optimizable_field(self.web_thick_field)
+        row = self.add_plate_row(row, "Web Thickness (mm):", self.web_thick_field)
+
         self.spacing_input = QLineEdit()
         self.spacing_input.setPlaceholderText("Enter spacing in mm")
         self.spacing_input.setValidator(QDoubleValidator(0, 100000, 2))
-        self.style_input_field(self.spacing_input)
-        spacing_row.addWidget(spacing_label)
-        spacing_row.addWidget(self.spacing_input)
-        spacing_row.addStretch()
-        spacing_layout.addLayout(spacing_row)
-        
-        spacing_group.setLayout(spacing_layout)
-        scroll_layout.addWidget(spacing_group)
-        
-        scroll_layout.addStretch()
-        scroll.setWidget(scroll_widget)
-        main_layout.addWidget(scroll)
-        
-        # Connect signals
+        apply_field_style(self.spacing_input)
+        self.spacing_label = self.create_label("Spacing (mm):")
+        self.form_layout.addWidget(self.spacing_label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(self.spacing_input, row, 1)
+
         self.type_combo.currentTextChanged.connect(self.on_type_changed)
-        
-        # Initialize visibility
         self.on_type_changed(self.type_combo.currentText())
-    
+
+    def create_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 13px; color: #2f2f2f; font-weight: 600;")
+        return label
+
+    def prepare_optimizable_field(self, field):
+        field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        apply_field_style(field.mode_combo)
+        apply_field_style(field.input_field)
+
+    def add_plate_row(self, row, text, widget):
+        label = self.create_label(text)
+        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.form_layout.addWidget(label, row, 0, Qt.AlignVCenter)
+        self.form_layout.addWidget(widget, row, 1)
+        self.plate_rows.append((label, widget))
+        return row + 1
+
     def on_type_changed(self, text):
         """Show/hide sections based on diaphragm type"""
-        if text == "Same as cross-bracing":
-            self.is_beam_group.setVisible(False)
-            self.plate_girder_group.setVisible(False)
-        elif text == "Rolled Beam Section":
-            self.is_beam_group.setVisible(True)
-            self.plate_girder_group.setVisible(False)
-        else:  # Plate Girder Section
-            self.is_beam_group.setVisible(False)
-            self.plate_girder_group.setVisible(True)
-    
-    def style_input_field(self, field):
-        """Apply consistent styling to input fields"""
-        field.setMinimumHeight(28)
-        if isinstance(field, QComboBox):
-            field.setStyleSheet("""
-                QComboBox {
-                    padding: 4px 8px;
-                    padding-right: 30px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QComboBox::drop-down {
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                    width: 18px;
-                    height: 18px;
-                    border: 1px solid #606060;
-                    border-radius: 9px;
-                    background-color: transparent;
-                    right: 5px;
-                }
-                QComboBox::drop-down:hover {
-                    background-color: #e0e0e0;
-                }
-                QComboBox::down-arrow {
-                    image: none;
-                    width: 0;
-                    height: 0;
-                    border-left: 3px solid transparent;
-                    border-right: 3px solid transparent;
-                    border-top: 4px solid #606060;
-                }
-                QComboBox:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    border: 1px solid #c0c0c0;
-                    selection-background-color: #e8f4ff;
-                }
-            """)
-        elif isinstance(field, QLineEdit):
-            field.setStyleSheet("""
-                QLineEdit {
-                    padding: 4px 8px;
-                    border: 1px solid #c0c0c0;
-                    border-radius: 3px;
-                    background-color: white;
-                    color: #333;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #4a7ba7;
-                }
-                QLineEdit:disabled {
-                    background-color: #f5f5f5;
-                    color: #999;
-                }
-            """)
-    
-    def get_group_style(self):
-        """Return consistent group box styling"""
-        return """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 11px;
-                border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 15px;
-                background-color: #fafafa;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 5px;
-                background-color: white;
-            }
-        """
+        is_same = text == "Same as cross-bracing"
+        is_rolled = text == "Rolled Beam Section"
+
+        self.is_section_label.setVisible(is_rolled)
+        self.is_beam_combo.setVisible(is_rolled)
+
+        show_plate = text == "Plate Girder Section"
+        for label, widget in self.plate_rows:
+            label.setVisible(show_plate)
+            widget.setVisible(show_plate)
+
+        if is_same:
+            self.spacing_input.setEnabled(False)
+            self.spacing_label.setEnabled(False)
+            self.spacing_input.clear()
+        else:
+            self.spacing_input.setEnabled(True)
+            self.spacing_label.setEnabled(True)
 
 
 class AdditionalInputsWidget(QWidget):
@@ -1587,20 +1208,26 @@ class AdditionalInputsWidget(QWidget):
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #d0d0d0;
-                background: white;
+                border: 1px solid #d1d1d1;
+                background: #ffffff;
             }
             QTabBar::tab {
-                background: #f0f0f0;
-                color: black;
-                border: 1px solid #d0d0d0;
-                padding: 8px 16px;
-                margin-right: 2px;
+                background: #e9e9e9;
+                color: #3a3a3a;
+                border: 1px solid #d1d1d1;
+                border-bottom-color: #d1d1d1;
+                padding: 10px 22px;
+                margin-right: 4px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
             }
             QTabBar::tab:selected {
-                background: #A2EBB6;
-                color: black;
-                border-bottom-color: white;
+                background: #9ecb3d;
+                color: #ffffff;
+                border: 1px solid #7ea82d;
+            }
+            QTabBar::tab:hover {
+                background: #f5f5f5;
             }
         """)
         
