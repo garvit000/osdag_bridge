@@ -3,7 +3,7 @@ Additional Inputs Widget for Highway Bridge Design
 Provides detailed input fields for manual bridge parameter definition
 """
 import sys
-import base64
+import os
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
     QComboBox, QGroupBox, QFormLayout, QPushButton, QScrollArea,
@@ -16,31 +16,13 @@ from PySide6.QtGui import QDoubleValidator, QIntValidator
 from common import *
 
 
-def get_dropdown_svg_icon():
-    """Return the SVG markup for styled dropdown arrows."""
-    return (
-        "<svg width=\"30\" height=\"28\" viewBox=\"0 0 30 28\" fill=\"none\" "
-        "xmlns=\"http://www.w3.org/2000/svg\">"
-        "<path d=\"M14.5833 17.875L20.4167 12.375H8.75L14.5833 17.875Z\" fill=\"black\"/>"
-        "<path d=\"M14.5833 27.5C12.566 27.5 10.6701 27.1391 8.89583 26.4172C7.12153 25.6953 "
-        "5.57812 24.7156 4.26562 23.4781C2.95312 22.2406 1.91406 20.7854 1.14844 19.1125C0.382812 "
-        "17.4396 0 15.6521 0 13.75C0 11.8479 0.382812 10.0604 1.14844 8.3875C1.91406 6.71458 2.95312 "
-        "5.25938 4.26562 4.02187C5.57812 2.78437 7.12153 1.80469 8.89583 1.08281C10.6701 0.360938 12.566 "
-        "0 14.5833 0C16.6007 0 18.4965 0.360938 20.2708 1.08281C22.0451 1.80469 23.5885 2.78437 24.901 4.02187C26.2135 "
-        "5.25938 27.2526 6.71458 28.0182 8.3875C28.7839 10.0604 29.1667 11.8479 29.1667 13.75C29.1667 15.6521 28.7839 17.4396 "
-        "28.0182 19.1125C27.2526 20.7854 26.2135 22.2406 24.901 23.4781C23.5885 24.7156 22.0451 25.6953 20.2708 26.4172C18.4965 "
-        "27.1391 16.6007 27.5 14.5833 27.5ZM14.5833 24.75C17.8403 24.75 20.599 23.6844 22.8594 21.5531C25.1198 19.4219 26.25 "
-        "16.8208 26.25 13.75C26.25 10.6792 25.1198 8.07812 22.8594 5.94688C20.599 3.81563 17.8403 2.75 14.5833 2.75C11.3264 2.75 "
-        "8.56771 3.81563 6.30729 5.94688C4.04688 8.07812 2.91667 10.6792 2.91667 13.75C2.91667 16.8208 4.04688 19.4219 6.30729 "
-        "21.5531C8.56771 23.6844 11.3264 24.75 14.5833 24.75Z\" fill=\"black\"/>"
-        "</svg>"
-    )
-
-
 def get_combobox_style():
-    """Return the common stylesheet for dropdowns with the SVG icon."""
-    svg_data = get_dropdown_svg_icon().encode("utf-8")
-    svg_base64 = base64.b64encode(svg_data).decode("utf-8")
+    """Return the common stylesheet for dropdowns with the SVG icon from file."""
+    # Get the path to the dropdown.svg file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    svg_path = os.path.join(current_dir, "dropdown.svg")
+    svg_url = svg_path.replace("\\", "/")
+    
     return f"""
         QComboBox {{
             padding: 6px 42px 6px 14px;
@@ -66,9 +48,9 @@ def get_combobox_style():
             right: 8px;
         }}
         QComboBox::down-arrow {{
-            image: url(data:image/svg+xml;base64,{svg_base64});
-            width: 26px;
-            height: 26px;
+            image: url({svg_url});
+            width: 21px;
+            height: 19px;
         }}
         QComboBox QAbstractItemView {{
             border: 1px solid #b8b8b8;
