@@ -683,11 +683,40 @@ class InputDock(QWidget):
         group_container_layout.setContentsMargins(0, 0, 0, 0)
         group_container_layout.setSpacing(12)
         
-        # === Type of Structure Section ===
-        structure_group = create_group_box("Type of Structure")
+        # === Superstructure Section ===
+        structure_group = QGroupBox()
+        structure_group.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #d0d0d0;
+                border-radius: 5px;
+                margin-top: 0px;
+                padding-top: 5px;
+                background-color: #fafafa;
+            }
+        """)
         structure_layout = QVBoxLayout()
-        structure_layout.setContentsMargins(10, 15, 10, 10)
+        structure_layout.setContentsMargins(10, 10, 10, 10)
         structure_layout.setSpacing(8)
+        
+        # Header with title
+        struct_header = QHBoxLayout()
+        struct_title = QLabel("Superstructure")
+        struct_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        struct_header.addWidget(struct_title)
+        struct_header.addStretch()
+        structure_layout.addLayout(struct_header)
+        
+        # Subsection label
+        type_label = QLabel("Type of Structure")
+        type_label.setStyleSheet("font-size: 10px; font-weight: normal; color: #555; margin-top: 5px;")
+        structure_layout.addWidget(type_label)
+        
+        # Type of Structure field
+        type_row = QHBoxLayout()
+        type_field_label = QLabel("Type of Structure")
+        type_field_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+        type_field_label.setMinimumWidth(120)
+        type_field_label.setMaximumWidth(120)
         
         self.structure_type_combo = NoScrollComboBox()
         self.structure_type_combo.setObjectName(KEY_STRUCTURE_TYPE)
@@ -695,8 +724,9 @@ class InputDock(QWidget):
         self.structure_type_combo.addItems(VALUES_STRUCTURE_TYPE)
         self.structure_type_combo.setToolTip("Defines the application of the steel girder bridge.\nCurrently only Highway Bridge is supported.")
         
-        structure_row = create_form_row("Type of structure", self.structure_type_combo)
-        structure_layout.addLayout(structure_row)
+        type_row.addWidget(type_field_label)
+        type_row.addWidget(self.structure_type_combo, 1)
+        structure_layout.addLayout(type_row)
         
         self.structure_note = QLabel("*Other structures not included")
         self.structure_note.setStyleSheet("font-size: 9px; color: #d32f2f; font-style: italic; margin-left: 150px;")
@@ -715,13 +745,39 @@ class InputDock(QWidget):
                 border: 1px solid #d0d0d0;
                 border-radius: 5px;
                 margin-top: 0px;
-                padding-top: 10px;
+                padding-top: 5px;
                 background-color: #fafafa;
             }
         """)
         location_layout = QVBoxLayout()
         location_layout.setContentsMargins(10, 10, 10, 10)
-        location_layout.setSpacing(0)
+        location_layout.setSpacing(8)
+        
+        # Header with title and button
+        loc_header = QHBoxLayout()
+        loc_title = QLabel("Project Location:")
+        loc_title.setStyleSheet("font-size: 11px; font-weight: normal; color: #333;")
+        loc_header.addWidget(loc_title)
+        loc_header.addStretch()
+        
+        add_here_btn = QPushButton("Add Here")
+        add_here_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                border: none;
+                border-radius: 3px;
+                padding: 4px 12px;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                background-color: #7a9a12;
+            }
+        """)
+        add_here_btn.clicked.connect(self.show_project_location_dialog)
+        loc_header.addWidget(add_here_btn)
+        location_layout.addLayout(loc_header)
         
         self.project_location_combo = NoScrollComboBox()
         self.project_location_combo.setObjectName(KEY_PROJECT_LOCATION)
@@ -729,76 +785,31 @@ class InputDock(QWidget):
         self.project_location_combo.currentTextChanged.connect(self.on_project_location_changed)
         self.project_location_combo.hide()
         
-        location_btn = QPushButton("Project Location")
-        location_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #333;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                padding: 8px 12px;
-                text-align: left;
-                min-height: 28px;
-                padding-right: 30px;
-            }
-            QPushButton:hover {
-                background-color: #f5f5f5;
-                border: 1px solid #909090;
-            }
-            QPushButton::menu-indicator {
-                image: none;
-                width: 0px;
-            }
-        """)
-        
-        # Add dropdown arrow indicator
-        location_btn_container = QWidget()
-        location_btn_layout = QHBoxLayout(location_btn_container)
-        location_btn_layout.setContentsMargins(0, 0, 0, 0)
-        location_btn_layout.setSpacing(0)
-        
-        location_btn.clicked.connect(self.show_project_location_dialog)
-        location_btn_layout.addWidget(location_btn)
-        
-        # Create arrow overlay
-        arrow_label = QLabel("▼")
-        arrow_label.setAlignment(Qt.AlignCenter)
-        arrow_label.setStyleSheet("""
-            QLabel {
-                color: #606060;
-                font-size: 8px;
-                background-color: transparent;
-                border: 1px solid #606060;
-                border-radius: 10px;
-                min-width: 20px;
-                max-width: 20px;
-                min-height: 20px;
-                max-height: 20px;
-                margin-right: 8px;
-            }
-            QLabel:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        
-        # We don't need arrow_label.setFixedWidth(20) anymore
-        location_btn_layout.addWidget(arrow_label)
-        location_btn_layout.setAlignment(arrow_label, Qt.AlignRight | Qt.AlignVCenter)
-        
-        # Position arrow on top of button
-        arrow_label.raise_()
-        arrow_label.setAttribute(Qt.WA_TransparentForMouseEvents)
-        
-        location_layout.addWidget(location_btn)
-        
         location_group.setLayout(location_layout)
         group_container_layout.addWidget(location_group)
         
         # === Geometric Details Section ===
-        geometric_group = create_group_box("Geometric Details")
+        geometric_group = QGroupBox()
+        geometric_group.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #d0d0d0;
+                border-radius: 5px;
+                margin-top: 0px;
+                padding-top: 5px;
+                background-color: #fafafa;
+            }
+        """)
         geometric_layout = QVBoxLayout()
-        geometric_layout.setContentsMargins(10, 15, 10, 10)
+        geometric_layout.setContentsMargins(10, 10, 10, 10)
         geometric_layout.setSpacing(8)
+        
+        # Header with title and button
+        geo_header = QHBoxLayout()
+        geo_title = QLabel("Geometric Details")
+        geo_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        geo_header.addWidget(geo_title)
+        geo_header.addStretch()
+        geometric_layout.addLayout(geo_header)
         
         # Span
         self.span_input = QLineEdit()
@@ -845,11 +856,89 @@ class InputDock(QWidget):
         geometric_group.setLayout(geometric_layout)
         group_container_layout.addWidget(geometric_group)
         
+        # === Additional Geometry Section ===
+        add_geo_group = QGroupBox()
+        add_geo_group.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #d0d0d0;
+                border-radius: 5px;
+                margin-top: 0px;
+                padding-top: 5px;
+                background-color: #fafafa;
+            }
+        """)
+        add_geo_layout = QVBoxLayout()
+        add_geo_layout.setContentsMargins(10, 10, 10, 10)
+        add_geo_layout.setSpacing(8)
+        
+        # Header with title and button
+        add_geo_header = QHBoxLayout()
+        add_geo_title = QLabel("Additional Geometry:")
+        add_geo_title.setStyleSheet("font-size: 11px; font-weight: normal; color: #333;")
+        add_geo_header.addWidget(add_geo_title)
+        add_geo_header.addStretch()
+        
+        modify_geo_btn = QPushButton("Modify Here")
+        modify_geo_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                border: none;
+                border-radius: 3px;
+                padding: 4px 12px;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                background-color: #7a9a12;
+            }
+        """)
+        modify_geo_btn.clicked.connect(self.show_additional_inputs)
+        add_geo_header.addWidget(modify_geo_btn)
+        add_geo_layout.addLayout(add_geo_header)
+        
+        add_geo_group.setLayout(add_geo_layout)
+        group_container_layout.addWidget(add_geo_group)
+        
         # === Material Inputs Section ===
-        material_group = create_group_box("Material Inputs")
+        material_group = QGroupBox()
+        material_group.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #d0d0d0;
+                border-radius: 5px;
+                margin-top: 0px;
+                padding-top: 5px;
+                background-color: #fafafa;
+            }
+        """)
         material_layout = QVBoxLayout()
-        material_layout.setContentsMargins(10, 15, 10, 10)
+        material_layout.setContentsMargins(10, 10, 10, 10)
         material_layout.setSpacing(8)
+        
+        # Header with title and button
+        mat_header = QHBoxLayout()
+        mat_title = QLabel("Material Inputs")
+        mat_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        mat_header.addWidget(mat_title)
+        mat_header.addStretch()
+        
+        modify_mat_btn = QPushButton("Modify Here")
+        modify_mat_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                border: none;
+                border-radius: 3px;
+                padding: 4px 12px;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                background-color: #7a9a12;
+            }
+        """)
+        mat_header.addWidget(modify_mat_btn)
+        material_layout.addLayout(mat_header)
         
         # Girder
         self.girder_combo = NoScrollComboBox()

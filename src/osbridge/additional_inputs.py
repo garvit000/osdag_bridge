@@ -222,238 +222,96 @@ class BridgeGeometryTab(QWidget):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(0)
         
-        # Main horizontal split: Diagram (left) and Inputs (right)
-        content_layout = QHBoxLayout()
-        
-        # LEFT SIDE: Diagram
+        # TOP: Diagram placeholder
         diagram_widget = QWidget()
         diagram_widget.setStyleSheet("""
             QWidget {
-                background-color: white;
-                border: 2px solid #d0d0d0;
-                border-radius: 4px;
+                background-color: #d9d9d9;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
             }
         """)
-        diagram_widget.setMinimumWidth(450)
-        diagram_widget.setMaximumWidth(500)
+        diagram_widget.setMinimumHeight(150)
+        diagram_widget.setMaximumHeight(200)
         diagram_layout = QVBoxLayout(diagram_widget)
-        diagram_layout.setContentsMargins(10, 10, 10, 10)
+        diagram_layout.setContentsMargins(20, 20, 20, 20)
+        diagram_layout.setAlignment(Qt.AlignCenter)
         
         # Diagram image placeholder
-        diagram_label = QLabel()
-        diagram_label.setText("Bridge Geometry Diagram\n(Placeholder)")
+        diagram_label = QLabel("Bridge Geometry\nDiagram")
         diagram_label.setAlignment(Qt.AlignCenter)
         diagram_label.setStyleSheet("""
             QLabel {
-                background-color: #f5f5f5;
-                border: 1px dashed #999;
+                background-color: transparent;
+                border: none;
                 padding: 20px;
-                font-size: 12px;
-                color: #666;
-                min-height: 300px;
+                font-size: 13px;
+                color: #333;
             }
         """)
-        diagram_layout.addWidget(diagram_label)
+        diagram_layout.addWidget(diagram_label, 0, Qt.AlignCenter)
         
-        content_layout.addWidget(diagram_widget)
+        main_layout.addWidget(diagram_widget)
+        main_layout.addSpacing(10)
         
-        # RIGHT SIDE: Input Fields with Scroll
-        input_scroll = QScrollArea()
-        input_scroll.setWidgetResizable(True)
-        input_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        input_scroll.setStyleSheet("""
-            QScrollArea {
-                border: none;
+        # BOTTOM: Tabbed Input Interface
+        input_container = QWidget()
+        input_container.setStyleSheet("""
+            QWidget {
                 background-color: white;
             }
         """)
+        input_layout = QVBoxLayout(input_container)
+        input_layout.setContentsMargins(0, 0, 0, 0)
+        input_layout.setSpacing(0)
         
-        input_container = QWidget()
-        input_container.setStyleSheet("background-color: white; color: #000000;")
-        inputs_layout = QVBoxLayout(input_container)
-        inputs_layout.setContentsMargins(15, 10, 15, 10)
-        inputs_layout.setSpacing(12)
+        # Create sub-tabs for different input categories
+        self.input_tabs = QTabWidget()
+        self.input_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #b0b0b0;
+                border-top: none;
+                background-color: #f5f5f5;
+                border-radius: 0px 0px 8px 8px;
+            }
+            QTabBar::tab {
+                background-color: #e8e8e8;
+                color: #555;
+                padding: 10px 20px;
+                border: 1px solid #b0b0b0;
+                border-bottom: none;
+                border-right: none;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            QTabBar::tab:last {
+                border-right: 1px solid #b0b0b0;
+            }
+            QTabBar::tab:selected {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                border: 1px solid #90AF13;
+                border-bottom: none;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: #d0d0d0;
+            }
+        """)
         
-        # GROUP 1: Girder Spacing, No. of Girders, Deck Overhang Width
-        girder_group = QGroupBox("")
-        self.style_group_box(girder_group)
-        girder_layout = QFormLayout(girder_group)
-        girder_layout.setSpacing(8)
-        girder_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        # Create each sub-tab
+        self.create_layout_tab()
+        self.create_deck_tab()
+        self.create_crash_barrier_tab()
+        self.create_railing_tab()
+        self.create_wearing_course_tab()
+        self.create_lane_details_tab()
         
-        self.girder_spacing = QLineEdit()
-        self.girder_spacing.setValidator(QDoubleValidator(0.01, 50.0, 3))
-        self.girder_spacing.setText(str(DEFAULT_GIRDER_SPACING))
-        self.girder_spacing.setPlaceholderText(f"Default: {DEFAULT_GIRDER_SPACING} m")
-        self.style_input_field(self.girder_spacing)
-        self.girder_spacing.textChanged.connect(self.on_girder_spacing_changed)
-        girder_layout.addRow("Girder Spacing (m):", self.girder_spacing)
+        input_layout.addWidget(self.input_tabs)
         
-        self.no_of_girders = QLineEdit()
-        self.no_of_girders.setValidator(QIntValidator(2, 100))
-        self.no_of_girders.setPlaceholderText("Auto-calculated integer")
-        self.style_input_field(self.no_of_girders)
-        self.no_of_girders.textChanged.connect(self.on_no_of_girders_changed)
-        girder_layout.addRow("No. of Girders:", self.no_of_girders)
-        
-        self.deck_overhang = QLineEdit()
-        self.deck_overhang.setValidator(QDoubleValidator(0.0, 10.0, 3))
-        self.deck_overhang.setText(str(DEFAULT_DECK_OVERHANG))
-        self.deck_overhang.setPlaceholderText(f"Default: {DEFAULT_DECK_OVERHANG} m")
-        self.style_input_field(self.deck_overhang)
-        self.deck_overhang.textChanged.connect(self.on_deck_overhang_changed)
-        girder_layout.addRow("Deck Overhang Width (m):", self.deck_overhang)
-        
-        inputs_layout.addWidget(girder_group)
-        
-        # GROUP 2: Deck Thickness
-        deck_group = QGroupBox("")
-        self.style_group_box(deck_group)
-        deck_layout = QFormLayout(deck_group)
-        deck_layout.setSpacing(8)
-        deck_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        self.deck_thickness = QLineEdit()
-        self.deck_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
-        self.deck_thickness.setPlaceholderText("Enter thickness in mm")
-        self.style_input_field(self.deck_thickness)
-        deck_layout.addRow("Deck Thickness (mm):", self.deck_thickness)
-        
-        inputs_layout.addWidget(deck_group)
-        
-        # GROUP 3: Footpath Width and Thickness
-        self.footpath_group = QGroupBox("")
-        self.style_group_box(self.footpath_group)
-        self.footpath_group.setVisible(self.footpath_value != "None")
-        footpath_layout = QFormLayout(self.footpath_group)
-        footpath_layout.setSpacing(8)
-        footpath_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        self.footpath_width = QLineEdit()
-        self.footpath_width.setValidator(QDoubleValidator(MIN_FOOTPATH_WIDTH, 5.0, 3))
-        self.footpath_width.setPlaceholderText(f"Min: {MIN_FOOTPATH_WIDTH} m (IRC 5 Clause 104.3.6)")
-        self.style_input_field(self.footpath_width)
-        self.footpath_width.textChanged.connect(self.on_footpath_width_changed)
-        self.footpath_width.editingFinished.connect(self.validate_footpath_width)
-        footpath_layout.addRow("Footpath Width (m):", self.footpath_width)
-        
-        self.footpath_thickness = QLineEdit()
-        self.footpath_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
-        self.footpath_thickness.setPlaceholderText("Auto-fills from deck thickness")
-        self.style_input_field(self.footpath_thickness)
-        footpath_layout.addRow("Footpath Thickness (mm):", self.footpath_thickness)
-        
-        inputs_layout.addWidget(self.footpath_group)
-        
-        # GROUP 4: Crash Barrier Details, Railing Details, Safety Kerb (Combined)
-        combined_group = QGroupBox("")
-        self.style_group_box(combined_group)
-        combined_layout = QVBoxLayout(combined_group)
-        combined_layout.setSpacing(10)
-        
-        # Crash Barrier Details Section
-        crash_barrier_label = QLabel("Crash Barrier Details:")
-        crash_barrier_label.setStyleSheet("font-weight: bold; font-size: 11px; margin-bottom: 5px; color: #4a7ba7;")
-        combined_layout.addWidget(crash_barrier_label)
-        
-        crash_form = QFormLayout()
-        crash_form.setSpacing(8)
-        crash_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        self.crash_barrier_type = QComboBox()
-        self.style_input_field(self.crash_barrier_type)
-        self.crash_barrier_type.addItems(VALUES_CRASH_BARRIER_TYPE)
-        self.crash_barrier_type.currentTextChanged.connect(self.on_crash_barrier_type_changed)
-        crash_form.addRow("Type:", self.crash_barrier_type)
-        
-        self.crash_barrier_density = QLineEdit()
-        self.style_input_field(self.crash_barrier_density)
-        self.crash_barrier_density.setPlaceholderText("Material density")
-        self.crash_barrier_density.setValidator(QDoubleValidator(0.0, 100.0, 2))
-        crash_form.addRow("Material Density (MPa):", self.crash_barrier_density)
-        
-        self.crash_barrier_width = QLineEdit()
-        self.style_input_field(self.crash_barrier_width)
-        self.crash_barrier_width.setText(str(DEFAULT_CRASH_BARRIER_WIDTH))
-        self.crash_barrier_width.setPlaceholderText(f"Default: {DEFAULT_CRASH_BARRIER_WIDTH} m")
-        self.crash_barrier_width.setValidator(QDoubleValidator(0.0, 2.0, 3))
-        self.crash_barrier_width.textChanged.connect(self.recalculate_girders)
-        crash_form.addRow("Width (m):", self.crash_barrier_width)
-        
-        self.crash_barrier_area = QLineEdit()
-        self.style_input_field(self.crash_barrier_area)
-        self.crash_barrier_area.setPlaceholderText("Cross-sectional area")
-        self.crash_barrier_area.setValidator(QDoubleValidator(0.0, 10.0, 4))
-        crash_form.addRow("Area (m²):", self.crash_barrier_area)
-        
-        combined_layout.addLayout(crash_form)
-        
-        # Railing Details Section
-        railing_label = QLabel("Railing Details:")
-        railing_label.setStyleSheet("font-weight: bold; font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: #4a7ba7;")
-        combined_layout.addWidget(railing_label)
-        
-        railing_form = QFormLayout()
-        railing_form.setSpacing(8)
-        railing_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        self.railing_width = QLineEdit()
-        self.railing_width.setValidator(QDoubleValidator(0.0, 1.0, 3))
-        self.railing_width.setText(str(DEFAULT_RAILING_WIDTH))
-        self.railing_width.setPlaceholderText(f"Default: {DEFAULT_RAILING_WIDTH} m")
-        self.style_input_field(self.railing_width)
-        self.railing_width.textChanged.connect(self.recalculate_girders)
-        railing_form.addRow("Width (m):", self.railing_width)
-        
-        self.railing_height = QLineEdit()
-        self.railing_height.setValidator(QDoubleValidator(MIN_RAILING_HEIGHT, 3.0, 3))
-        self.railing_height.setPlaceholderText(f"Min: {MIN_RAILING_HEIGHT} m (IRC 5 Clauses 109.7.2.3 & 109.7.2.4)")
-        self.style_input_field(self.railing_height)
-        self.railing_height.editingFinished.connect(self.validate_railing_height)
-        railing_form.addRow("Height (m):", self.railing_height)
-        
-        combined_layout.addLayout(railing_form)
-        
-        # Safety Kerb Section (conditional)
-        self.safety_kerb_container = QWidget()
-        self.safety_kerb_container.setVisible(self.footpath_value == "None")
-        safety_kerb_layout = QVBoxLayout(self.safety_kerb_container)
-        safety_kerb_layout.setContentsMargins(0, 0, 0, 0)
-        safety_kerb_layout.setSpacing(5)
-        
-        safety_kerb_label = QLabel("Safety Kerb:")
-        safety_kerb_label.setStyleSheet("font-weight: bold; font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: #4a7ba7;")
-        safety_kerb_layout.addWidget(safety_kerb_label)
-        
-        safety_kerb_form = QFormLayout()
-        safety_kerb_form.setSpacing(8)
-        safety_kerb_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        self.safety_kerb_width = QLineEdit()
-        self.style_input_field(self.safety_kerb_width)
-        self.safety_kerb_width.setValidator(QDoubleValidator(MIN_SAFETY_KERB_WIDTH, 2.0, 3))
-        self.safety_kerb_width.setPlaceholderText(f"Min: {MIN_SAFETY_KERB_WIDTH} m (IRC 5 Clause 101.41)")
-        self.safety_kerb_width.editingFinished.connect(self.validate_safety_kerb_width)
-        safety_kerb_form.addRow("Width (m):", self.safety_kerb_width)
-        
-        self.safety_kerb_thickness = QLineEdit()
-        self.style_input_field(self.safety_kerb_thickness)
-        self.safety_kerb_thickness.setPlaceholderText("Enter thickness in mm")
-        self.safety_kerb_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
-        safety_kerb_form.addRow("Thickness (mm):", self.safety_kerb_thickness)
-        
-        safety_kerb_layout.addLayout(safety_kerb_form)
-        combined_layout.addWidget(self.safety_kerb_container)
-        
-        inputs_layout.addWidget(combined_group)
-        
-        inputs_layout.addStretch()
-        
-        input_scroll.setWidget(input_container)
-        content_layout.addWidget(input_scroll, 1)
-        
-        main_layout.addLayout(content_layout)
+        main_layout.addWidget(input_container, 1)
         
         # Connect deck thickness to footpath thickness
         self.deck_thickness.textChanged.connect(self.update_footpath_thickness)
@@ -461,11 +319,361 @@ class BridgeGeometryTab(QWidget):
         # Initialize calculations with default values
         self.recalculate_girders()
     
+    def create_layout_tab(self):
+        """Create the Layout tab with girder spacing and deck overhang"""
+        layout_widget = QWidget()
+        layout_widget.setStyleSheet("background-color: #f5f5f5;")
+        layout_layout = QVBoxLayout(layout_widget)
+        layout_layout.setContentsMargins(25, 25, 25, 25)
+        layout_layout.setSpacing(20)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
+        layout_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
+        
+        # Row 0: Girder Spacing and No. of Girders
+        girder_spacing_label = QLabel("Girder Spacing (m):")
+        girder_spacing_label.setStyleSheet("font-size: 11px; color: #000;")
+        girder_spacing_label.setMinimumWidth(150)
+        self.girder_spacing = QLineEdit()
+        self.girder_spacing.setValidator(QDoubleValidator(0.01, 50.0, 3))
+        self.girder_spacing.setText(str(DEFAULT_GIRDER_SPACING))
+        self.style_input_field(self.girder_spacing)
+        self.girder_spacing.textChanged.connect(self.on_girder_spacing_changed)
+        
+        no_girders_label = QLabel("No. of Girders:")
+        no_girders_label.setStyleSheet("font-size: 11px; color: #000;")
+        no_girders_label.setMinimumWidth(150)
+        self.no_of_girders = QLineEdit()
+        self.no_of_girders.setValidator(QIntValidator(2, 100))
+        self.style_input_field(self.no_of_girders)
+        self.no_of_girders.textChanged.connect(self.on_no_of_girders_changed)
+        
+        grid.addWidget(girder_spacing_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.girder_spacing, 0, 1)
+        grid.addWidget(no_girders_label, 0, 2, Qt.AlignLeft)
+        grid.addWidget(self.no_of_girders, 0, 3)
+        
+        # Row 1: Deck Overhang Width
+        deck_overhang_label = QLabel("Deck Overhang Width (m):")
+        deck_overhang_label.setStyleSheet("font-size: 11px; color: #000;")
+        deck_overhang_label.setMinimumWidth(150)
+        self.deck_overhang = QLineEdit()
+        self.deck_overhang.setValidator(QDoubleValidator(0.0, 10.0, 3))
+        self.deck_overhang.setText(str(DEFAULT_DECK_OVERHANG))
+        self.style_input_field(self.deck_overhang)
+        self.deck_overhang.textChanged.connect(self.on_deck_overhang_changed)
+        
+        grid.addWidget(deck_overhang_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.deck_overhang, 1, 1)
+        
+        layout_layout.addLayout(grid)
+        layout_layout.addStretch()
+        
+        self.input_tabs.addTab(layout_widget, "Layout")
+    
+    def create_deck_tab(self):
+        """Create the Deck tab with deck and footpath parameters"""
+        deck_widget = QWidget()
+        deck_widget.setStyleSheet("background-color: #f5f5f5;")
+        deck_layout = QVBoxLayout(deck_widget)
+        deck_layout.setContentsMargins(25, 25, 25, 25)
+        deck_layout.setSpacing(20)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
+        deck_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
+        
+        # Row 0: Deck Thickness and Material
+        deck_thickness_label = QLabel("Deck Thickness:")
+        deck_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        deck_thickness_label.setMinimumWidth(150)
+        self.deck_thickness = QLineEdit()
+        self.deck_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
+        self.style_input_field(self.deck_thickness)
+        
+        deck_material_label = QLabel("Material:")
+        deck_material_label.setStyleSheet("font-size: 11px; color: #000;")
+        deck_material_label.setMinimumWidth(150)
+        self.deck_material = QComboBox()
+        self.deck_material.addItems(VALUES_DECK_CONCRETE_GRADE)
+        self.style_input_field(self.deck_material)
+        
+        grid.addWidget(deck_thickness_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.deck_thickness, 0, 1)
+        grid.addWidget(deck_material_label, 0, 2, Qt.AlignLeft)
+        grid.addWidget(self.deck_material, 0, 3)
+        
+        # Row 1: Decking Plate (with circular icon) and Spacing
+        decking_plate_label = QLabel("Decking Plate:")
+        decking_plate_label.setStyleSheet("font-size: 11px; color: #000;")
+        decking_plate_label.setMinimumWidth(150)
+        self.decking_plate = QComboBox()
+        self.decking_plate.addItems(["None", "Type A", "Type B"])
+        self.style_input_field(self.decking_plate)
+        
+        decking_spacing_label = QLabel("Spacing:")
+        decking_spacing_label.setStyleSheet("font-size: 11px; color: #000;")
+        decking_spacing_label.setMinimumWidth(150)
+        self.decking_spacing = QLineEdit()
+        self.style_input_field(self.decking_spacing)
+        
+        grid.addWidget(decking_plate_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.decking_plate, 1, 1)
+        grid.addWidget(decking_spacing_label, 1, 2, Qt.AlignLeft)
+        grid.addWidget(self.decking_spacing, 1, 3)
+        
+        # Row 2: Footpath Width and Footpath Thickness
+        footpath_width_label = QLabel("Footpath Width (m):")
+        footpath_width_label.setStyleSheet("font-size: 11px; color: #000;")
+        footpath_width_label.setMinimumWidth(150)
+        self.footpath_width = QLineEdit()
+        self.footpath_width.setValidator(QDoubleValidator(MIN_FOOTPATH_WIDTH, 5.0, 3))
+        self.style_input_field(self.footpath_width)
+        self.footpath_width.textChanged.connect(self.on_footpath_width_changed)
+        
+        footpath_thickness_label = QLabel("Footpath Thickness :")
+        footpath_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        footpath_thickness_label.setMinimumWidth(150)
+        self.footpath_thickness = QLineEdit()
+        self.footpath_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
+        self.style_input_field(self.footpath_thickness)
+        
+        grid.addWidget(footpath_width_label, 2, 0, Qt.AlignLeft)
+        grid.addWidget(self.footpath_width, 2, 1)
+        grid.addWidget(footpath_thickness_label, 2, 2, Qt.AlignLeft)
+        grid.addWidget(self.footpath_thickness, 2, 3)
+        
+        # Row 3: Size and Safety Kerb Width
+        size_label = QLabel("Size:")
+        size_label.setStyleSheet("font-size: 11px; color: #000;")
+        size_label.setMinimumWidth(150)
+        self.footpath_size = QLineEdit()
+        self.style_input_field(self.footpath_size)
+        
+        safety_kerb_width_label = QLabel("Safety Kerb Width (m):")
+        safety_kerb_width_label.setStyleSheet("font-size: 11px; color: #000;")
+        safety_kerb_width_label.setMinimumWidth(150)
+        self.safety_kerb_width = QLineEdit()
+        self.safety_kerb_width.setValidator(QDoubleValidator(MIN_SAFETY_KERB_WIDTH, 2.0, 3))
+        self.style_input_field(self.safety_kerb_width)
+        
+        grid.addWidget(size_label, 3, 0, Qt.AlignLeft)
+        grid.addWidget(self.footpath_size, 3, 1)
+        grid.addWidget(safety_kerb_width_label, 3, 2, Qt.AlignLeft)
+        grid.addWidget(self.safety_kerb_width, 3, 3)
+        
+        # Row 4: Safety Kerb Thickness
+        safety_kerb_thickness_label = QLabel("Safety Kerb Thickness (mm):")
+        safety_kerb_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        safety_kerb_thickness_label.setMinimumWidth(150)
+        self.safety_kerb_thickness = QLineEdit()
+        self.safety_kerb_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
+        self.style_input_field(self.safety_kerb_thickness)
+        
+        grid.addWidget(safety_kerb_thickness_label, 4, 0, Qt.AlignLeft)
+        grid.addWidget(self.safety_kerb_thickness, 4, 1)
+        
+        deck_layout.addLayout(grid)
+        deck_layout.addStretch()
+        
+        self.input_tabs.addTab(deck_widget, "Deck")
+    
+    def create_crash_barrier_tab(self):
+        """Create the Crash Barrier tab"""
+        crash_widget = QWidget()
+        crash_widget.setStyleSheet("background-color: #f5f5f5;")
+        crash_layout = QVBoxLayout(crash_widget)
+        crash_layout.setContentsMargins(25, 25, 25, 25)
+        crash_layout.setSpacing(20)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
+        crash_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
+        
+        # Row 0: Crash Barrier Type
+        crash_type_label = QLabel("Crash Barrier Type:")
+        crash_type_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_type_label.setMinimumWidth(180)
+        self.crash_barrier_type = QComboBox()
+        self.crash_barrier_type.addItems(VALUES_CRASH_BARRIER_TYPE)
+        self.style_input_field(self.crash_barrier_type)
+        self.crash_barrier_type.currentTextChanged.connect(self.on_crash_barrier_type_changed)
+        
+        grid.addWidget(crash_type_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.crash_barrier_type, 0, 1, 1, 3)
+        
+        # Row 1: Crash Barrier Width
+        crash_width_label = QLabel("Crash Barrier Width (m):")
+        crash_width_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_width_label.setMinimumWidth(180)
+        self.crash_barrier_width = QLineEdit()
+        self.crash_barrier_width.setValidator(QDoubleValidator(0.0, 2.0, 3))
+        self.crash_barrier_width.setText(str(DEFAULT_CRASH_BARRIER_WIDTH))
+        self.style_input_field(self.crash_barrier_width)
+        self.crash_barrier_width.textChanged.connect(self.recalculate_girders)
+        
+        grid.addWidget(crash_width_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.crash_barrier_width, 1, 1, 1, 3)
+        
+        # Row 2: Crash Barrier Material density
+        crash_density_label = QLabel("Crash Barrier Material density")
+        crash_density_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_density_label.setMinimumWidth(180)
+        self.crash_barrier_density = QLineEdit()
+        self.crash_barrier_density.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.style_input_field(self.crash_barrier_density)
+        
+        grid.addWidget(crash_density_label, 2, 0, Qt.AlignLeft)
+        grid.addWidget(self.crash_barrier_density, 2, 1, 1, 3)
+        
+        # Row 3: Crash Barrier Area
+        crash_area_label = QLabel("Crash Barrier Area (m2 ):")
+        crash_area_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_area_label.setMinimumWidth(180)
+        self.crash_barrier_area = QLineEdit()
+        self.crash_barrier_area.setValidator(QDoubleValidator(0.0, 10.0, 4))
+        self.style_input_field(self.crash_barrier_area)
+        
+        grid.addWidget(crash_area_label, 3, 0, Qt.AlignLeft)
+        grid.addWidget(self.crash_barrier_area, 3, 1, 1, 3)
+        
+        crash_layout.addLayout(grid)
+        crash_layout.addStretch()
+        
+        self.input_tabs.addTab(crash_widget, "Crash Barrier")
+    
+    def create_railing_tab(self):
+        """Create the Railing tab"""
+        railing_widget = QWidget()
+        railing_widget.setStyleSheet("background-color: white;")
+        railing_layout = QVBoxLayout(railing_widget)
+        railing_layout.setContentsMargins(20, 20, 20, 20)
+        railing_layout.setSpacing(15)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #333;")
+        railing_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        
+        # Railing inputs would go here (placeholder for now)
+        railing_info = QLabel("Railing details not yet configured")
+        railing_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
+        grid.addWidget(railing_info, 0, 0, 1, 2)
+        
+        self.railing_width = QLineEdit()
+        self.railing_width.setValidator(QDoubleValidator(0.0, 1.0, 3))
+        self.railing_width.setText(str(DEFAULT_RAILING_WIDTH))
+        self.style_input_field(self.railing_width)
+        self.railing_width.textChanged.connect(self.recalculate_girders)
+        self.railing_width.hide()  # Hidden for now
+        
+        self.railing_height = QLineEdit()
+        self.railing_height.setValidator(QDoubleValidator(MIN_RAILING_HEIGHT, 3.0, 3))
+        self.style_input_field(self.railing_height)
+        self.railing_height.editingFinished.connect(self.validate_railing_height)
+        self.railing_height.hide()  # Hidden for now
+        
+        railing_layout.addLayout(grid)
+        railing_layout.addStretch()
+        
+        self.input_tabs.addTab(railing_widget, "Railing")
+    
+    def create_wearing_course_tab(self):
+        """Create the Wearing Course tab"""
+        wearing_widget = QWidget()
+        wearing_widget.setStyleSheet("background-color: #f5f5f5;")
+        wearing_layout = QVBoxLayout(wearing_widget)
+        wearing_layout.setContentsMargins(25, 25, 25, 25)
+        wearing_layout.setSpacing(20)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
+        wearing_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        
+        # Wearing course inputs (placeholder)
+        wearing_info = QLabel("Wearing course details not yet configured")
+        wearing_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
+        grid.addWidget(wearing_info, 0, 0, 1, 2)
+        
+        wearing_layout.addLayout(grid)
+        wearing_layout.addStretch()
+        
+        self.input_tabs.addTab(wearing_widget, "Wearing Course")
+    
+    def create_lane_details_tab(self):
+        """Create the Lane Details tab"""
+        lane_widget = QWidget()
+        lane_widget.setStyleSheet("background-color: #f5f5f5;")
+        lane_layout = QVBoxLayout(lane_widget)
+        lane_layout.setContentsMargins(25, 25, 25, 25)
+        lane_layout.setSpacing(20)
+        
+        # Title
+        title_label = QLabel("Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
+        lane_layout.addWidget(title_label)
+        
+        # Create grid for inputs
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(40)
+        grid.setVerticalSpacing(20)
+        grid.setColumnStretch(1, 1)
+        
+        # Lane details inputs (placeholder)
+        lane_info = QLabel("Lane details not yet configured")
+        lane_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
+        grid.addWidget(lane_info, 0, 0, 1, 2)
+        
+        lane_layout.addLayout(grid)
+        lane_layout.addStretch()
+        
+        self.input_tabs.addTab(lane_widget, "Lane Details")
+    
     def update_footpath_value(self, footpath_value):
         """Update visibility based on footpath selection"""
         self.footpath_value = footpath_value
-        self.footpath_group.setVisible(footpath_value != "None")
-        self.safety_kerb_container.setVisible(footpath_value == "None")
+        # Update visibility of footpath-related fields in Deck tab
+        if hasattr(self, 'footpath_width'):
+            self.footpath_width.setEnabled(footpath_value != "None")
+            self.footpath_thickness.setEnabled(footpath_value != "None")
         self.recalculate_girders()  # Recalculate when footpath changes
         self.footpath_changed.emit(footpath_value)
     
@@ -637,41 +845,31 @@ class SectionPropertiesTab(QWidget):
 
     def init_ui(self):
         """Initialize styled navigation and content panels."""
-        self.setStyleSheet("background-color: #f7f7f7;")
+        self.setStyleSheet("background-color: #f0f0f0;")
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(16)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
 
-        content_layout = QHBoxLayout()
-        content_layout.setSpacing(22)
-        main_layout.addLayout(content_layout)
+        # Top navigation bar (horizontal)
+        nav_bar = QWidget()
+        nav_bar.setStyleSheet("background-color: transparent;")
+        nav_bar_layout = QHBoxLayout(nav_bar)
+        nav_bar_layout.setContentsMargins(0, 0, 0, 0)
+        nav_bar_layout.setSpacing(0)
+        
+        main_layout.addWidget(nav_bar)
 
-        nav_frame = QFrame()
-        nav_frame.setObjectName("sectionNavFrame")
-        nav_frame.setFixedWidth(190)
-        nav_frame.setStyleSheet(
-            "QFrame#sectionNavFrame {"
-            " background-color: #f2f2f2;"
-            " border: 1px solid #d1d1d1;"
-            " border-radius: 16px;"
-            "}"
-        )
-        nav_layout = QVBoxLayout(nav_frame)
-        nav_layout.setContentsMargins(14, 20, 14, 20)
-        nav_layout.setSpacing(14)
-        content_layout.addWidget(nav_frame)
-
+        # Content frame
         content_frame = QFrame()
         content_frame.setObjectName("sectionContentFrame")
-        content_frame.setStyleSheet(
-            "QFrame#sectionContentFrame {"
-            " background-color: #ffffff;"
-            " border: 1px solid #c7c7c7;"
-            " border-radius: 18px;"
-            "}"
-        )
+        content_frame.setStyleSheet("""
+            QFrame#sectionContentFrame {
+                background-color: #f0f0f0;
+                border: none;
+            }
+        """)
         content_inner_layout = QVBoxLayout(content_frame)
-        content_inner_layout.setContentsMargins(30, 24, 30, 24)
+        content_inner_layout.setContentsMargins(0, 0, 0, 0)
         content_inner_layout.setSpacing(0)
 
         self.stack = QStackedWidget()
@@ -679,31 +877,56 @@ class SectionPropertiesTab(QWidget):
         self.stack.setStyleSheet("QStackedWidget#sectionStack { background-color: transparent; }")
         content_inner_layout.addWidget(self.stack)
 
-        content_layout.addWidget(content_frame, 1)
-        content_layout.setStretch(0, 0)
-        content_layout.setStretch(1, 1)
+        main_layout.addWidget(content_frame, 1)
 
         sections = [
-            ("Girder Details", GirderDetailsTab),
-            ("Stiffener Details", StiffenerDetailsTab),
-            ("Cross-Bracing Details", CrossBracingDetailsTab),
-            ("End Diaphragm Details", EndDiaphragmDetailsTab),
+            ("Girder Details:", GirderDetailsTab),
+            ("Stiffener Details:", StiffenerDetailsTab),
+            ("Cross-Bracing Details:", CrossBracingDetailsTab),
+            ("End Diaphragm Details:", EndDiaphragmDetailsTab),
         ]
 
-        for index, (title, widget_cls) in enumerate(sections):
-            button = QPushButton(f"{title}:")
-            button.setCheckable(True)
-            button.setCursor(Qt.PointingHandCursor)
-            button.setStyleSheet(SECTION_NAV_BUTTON_STYLE)
-            button.setMinimumHeight(86)
-            button.clicked.connect(lambda _checked, idx=index: self.switch_section(idx))
-            nav_layout.addWidget(button)
-            self.nav_buttons.append(button)
+        for i, (label, widget_class) in enumerate(sections):
+            btn = QPushButton(label)
+            btn.setObjectName("sectionNavBtn")
+            btn.setCheckable(True)
+            btn.setStyleSheet("""
+                QPushButton#sectionNavBtn {
+                    background-color: white;
+                    color: #333;
+                    border: 1px solid #b0b0b0;
+                    border-right: none;
+                    padding: 10px 20px;
+                    text-align: center;
+                    font-size: 11px;
+                    font-weight: normal;
+                    min-height: 30px;
+                }
+                QPushButton#sectionNavBtn:first {
+                    border-top-left-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                }
+                QPushButton#sectionNavBtn:last {
+                    border-right: 1px solid #b0b0b0;
+                    border-top-right-radius: 5px;
+                    border-bottom-right-radius: 5px;
+                }
+                QPushButton#sectionNavBtn:checked {
+                    background-color: #90AF13;
+                    color: white;
+                    font-weight: bold;
+                    border: 1px solid #90AF13;
+                }
+                QPushButton#sectionNavBtn:hover:!checked {
+                    background-color: #f5f5f5;
+                }
+            """)
+            btn.clicked.connect(lambda checked, idx=i: self.switch_section(idx))
+            self.nav_buttons.append(btn)
+            nav_bar_layout.addWidget(btn)
 
-            section_widget = widget_cls()
+            section_widget = widget_class()
             self.stack.addWidget(section_widget)
-
-        nav_layout.addStretch()
 
         if self.nav_buttons:
             self.nav_buttons[0].setChecked(True)
