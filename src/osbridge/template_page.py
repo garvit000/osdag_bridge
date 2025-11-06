@@ -41,28 +41,29 @@ class OutputDock(QWidget):
     
     def init_ui(self):
         from PySide6.QtWidgets import QPushButton, QGroupBox, QLineEdit, QComboBox
+        from input_dock import NoScrollComboBox, apply_field_style
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(8)
         
         # Title bar
         title_bar = QWidget()
         title_bar.setStyleSheet("""
             QWidget {
                 background-color: #90AF13;
-                border-radius: 5px;
+                border-radius: 4px;
             }
         """)
-        title_bar.setFixedHeight(40)
+        title_bar.setFixedHeight(35)
         title_layout = QHBoxLayout(title_bar)
-        title_layout.setContentsMargins(10, 0, 10, 0)
+        title_layout.setContentsMargins(12, 0, 12, 0)
         
         title_label = QLabel("Output Dock")
         title_label.setStyleSheet("""
             QLabel {
                 color: white;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: bold;
             }
         """)
@@ -71,21 +72,6 @@ class OutputDock(QWidget):
         
         main_layout.addWidget(title_bar)
         
-        # Design buttons group
-        design_group = QGroupBox()
-        design_group.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 5px;
-                padding-top: 10px;
-                background-color: #fafafa;
-            }
-        """)
-        design_layout = QVBoxLayout(design_group)
-        design_layout.setSpacing(10)
-        design_layout.setContentsMargins(10, 10, 10, 10)
-        
         # Girder Design button
         girder_btn = QPushButton("Girder Design")
         girder_btn.setStyleSheet("""
@@ -93,17 +79,18 @@ class OutputDock(QWidget):
                 background-color: white;
                 color: #333;
                 border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                padding: 8px;
+                border-radius: 4px;
+                padding: 10px;
                 text-align: center;
                 font-size: 11px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
                 border: 1px solid #909090;
             }
         """)
-        design_layout.addWidget(girder_btn)
+        main_layout.addWidget(girder_btn)
         
         # Deck Design button
         deck_btn = QPushButton("Deck Design")
@@ -112,65 +99,58 @@ class OutputDock(QWidget):
                 background-color: white;
                 color: #333;
                 border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                padding: 8px;
+                border-radius: 4px;
+                padding: 10px;
                 text-align: center;
                 font-size: 11px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
                 border: 1px solid #909090;
             }
         """)
-        design_layout.addWidget(deck_btn)
-        
-        main_layout.addWidget(design_group)
+        main_layout.addWidget(deck_btn)
         
         # Plot section
         plot_group = QGroupBox("Plot:")
         plot_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 10px;
+                color: #333;
                 border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
-                background-color: #fafafa;
+                border-radius: 4px;
+                margin-top: 8px;
+                padding-top: 12px;
+                background-color: white;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 5px;
+                left: 8px;
                 background-color: white;
             }
         """)
         plot_layout = QVBoxLayout(plot_group)
-        plot_layout.setSpacing(10)
-        plot_layout.setContentsMargins(10, 15, 10, 10)
+        plot_layout.setSpacing(8)
+        plot_layout.setContentsMargins(10, 12, 10, 10)
         
         # Load Combination row
         load_row = QHBoxLayout()
         load_label = QLabel("Load Combination:")
-        load_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        load_combo = QComboBox()
-        load_combo.addItems(["Envelope"])
-        load_combo.setStyleSheet("""
-            QComboBox {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        load_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        self.load_combo = NoScrollComboBox()
+        self.load_combo.addItems(["Envelope"])
+        apply_field_style(self.load_combo)
         load_row.addWidget(load_label)
-        load_row.addWidget(load_combo)
+        load_row.addWidget(self.load_combo)
         plot_layout.addLayout(load_row)
         
         # Force type buttons
         force_row = QHBoxLayout()
-        force_row.setSpacing(5)
+        force_row.setSpacing(6)
         
         shear_btn = QPushButton("Shear\nForce")
         shear_btn.setStyleSheet("""
@@ -179,13 +159,18 @@ class OutputDock(QWidget):
                 color: #333;
                 border: 1px solid #b0b0b0;
                 border-radius: 3px;
-                padding: 8px 5px;
-                font-size: 9px;
+                padding: 10px 4px;
+                font-size: 10px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
             }
+            QPushButton:checked {
+                background-color: #e0e0e0;
+            }
         """)
+        shear_btn.setCheckable(True)
         
         bending_btn = QPushButton("Bending\nMoment")
         bending_btn.setStyleSheet("""
@@ -194,13 +179,18 @@ class OutputDock(QWidget):
                 color: #333;
                 border: 1px solid #b0b0b0;
                 border-radius: 3px;
-                padding: 8px 5px;
-                font-size: 9px;
+                padding: 10px 4px;
+                font-size: 10px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
             }
+            QPushButton:checked {
+                background-color: #e0e0e0;
+            }
         """)
+        bending_btn.setCheckable(True)
         
         deflection_btn = QPushButton("Deflection")
         deflection_btn.setStyleSheet("""
@@ -209,13 +199,18 @@ class OutputDock(QWidget):
                 color: #333;
                 border: 1px solid #b0b0b0;
                 border-radius: 3px;
-                padding: 8px 5px;
-                font-size: 9px;
+                padding: 10px 4px;
+                font-size: 10px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
             }
+            QPushButton:checked {
+                background-color: #e0e0e0;
+            }
         """)
+        deflection_btn.setCheckable(True)
         
         force_row.addWidget(shear_btn)
         force_row.addWidget(bending_btn)
@@ -225,37 +220,21 @@ class OutputDock(QWidget):
         # Maximum Value
         max_row = QHBoxLayout()
         max_label = QLabel("Maximum Value:")
-        max_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        max_input = QLineEdit()
-        max_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        max_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        self.max_input = QLineEdit()
+        apply_field_style(self.max_input)
         max_row.addWidget(max_label)
-        max_row.addWidget(max_input)
+        max_row.addWidget(self.max_input)
         plot_layout.addLayout(max_row)
         
         # Minimum Value
         min_row = QHBoxLayout()
         min_label = QLabel("Minimum Value:")
-        min_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        min_input = QLineEdit()
-        min_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        min_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        self.min_input = QLineEdit()
+        apply_field_style(self.min_input)
         min_row.addWidget(min_label)
-        min_row.addWidget(min_input)
+        min_row.addWidget(self.min_input)
         plot_layout.addLayout(min_row)
         
         main_layout.addWidget(plot_group)
@@ -265,98 +244,68 @@ class OutputDock(QWidget):
         ratio_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 10px;
+                color: #333;
                 border: 1px solid #d0d0d0;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
-                background-color: #fafafa;
+                border-radius: 4px;
+                margin-top: 8px;
+                padding-top: 12px;
+                background-color: white;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 5px;
+                left: 8px;
                 background-color: white;
             }
         """)
         ratio_layout = QVBoxLayout(ratio_group)
         ratio_layout.setSpacing(8)
-        ratio_layout.setContentsMargins(10, 15, 10, 10)
+        ratio_layout.setContentsMargins(10, 12, 10, 10)
         
         # Ratio field
         ratio_row = QHBoxLayout()
         ratio_label = QLabel("Ratio:")
-        ratio_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        ratio_label.setMinimumWidth(80)
-        ratio_input = QLineEdit()
-        ratio_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        ratio_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        ratio_label.setMinimumWidth(75)
+        self.ratio_input = QLineEdit()
+        apply_field_style(self.ratio_input)
         ratio_row.addWidget(ratio_label)
-        ratio_row.addWidget(ratio_input)
+        ratio_row.addWidget(self.ratio_input)
         ratio_layout.addLayout(ratio_row)
         
         # Member No.
         member_row = QHBoxLayout()
         member_label = QLabel("Member No.:")
-        member_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        member_label.setMinimumWidth(80)
-        member_input = QLineEdit()
-        member_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        member_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        member_label.setMinimumWidth(75)
+        self.member_input = QLineEdit()
+        apply_field_style(self.member_input)
         member_row.addWidget(member_label)
-        member_row.addWidget(member_input)
+        member_row.addWidget(self.member_input)
         ratio_layout.addLayout(member_row)
         
         # Criteria
         criteria_row = QHBoxLayout()
         criteria_label = QLabel("Criteria:")
-        criteria_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        criteria_label.setMinimumWidth(80)
-        criteria_input = QLineEdit()
-        criteria_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        criteria_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        criteria_label.setMinimumWidth(75)
+        self.criteria_input = QLineEdit()
+        apply_field_style(self.criteria_input)
         criteria_row.addWidget(criteria_label)
-        criteria_row.addWidget(criteria_input)
+        criteria_row.addWidget(self.criteria_input)
         ratio_layout.addLayout(criteria_row)
         
         # Load Case
         load_case_row = QHBoxLayout()
         load_case_label = QLabel("Load Case:")
-        load_case_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        load_case_label.setMinimumWidth(80)
-        load_case_input = QLineEdit()
-        load_case_input.setStyleSheet("""
-            QLineEdit {
-                padding: 4px 8px;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-                font-size: 10px;
-            }
-        """)
+        load_case_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
+        load_case_label.setMinimumWidth(75)
+        self.load_case_input = QLineEdit()
+        apply_field_style(self.load_case_input)
         load_case_row.addWidget(load_case_label)
-        load_case_row.addWidget(load_case_input)
+        load_case_row.addWidget(self.load_case_input)
         ratio_layout.addLayout(load_case_row)
         
         main_layout.addWidget(ratio_group)
@@ -368,9 +317,10 @@ class OutputDock(QWidget):
                 background-color: white;
                 color: #333;
                 border: 1px solid #b0b0b0;
-                border-radius: 3px;
+                border-radius: 4px;
                 padding: 10px;
                 font-size: 11px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
@@ -384,9 +334,10 @@ class OutputDock(QWidget):
                 background-color: white;
                 color: #333;
                 border: 1px solid #b0b0b0;
-                border-radius: 3px;
+                border-radius: 4px;
                 padding: 10px;
                 font-size: 11px;
+                font-weight: normal;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
