@@ -711,10 +711,23 @@ class InputDock(QWidget):
         
         structure_layout.addLayout(struct_header)
         
-        # Type of Structure subsection
+        # === Type of Structure Box ===
+        type_box = QFrame()
+        type_box.setStyleSheet("""
+            QFrame {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+            }
+        """)
+        type_box_layout = QVBoxLayout(type_box)
+        type_box_layout.setContentsMargins(8, 8, 8, 8)
+        type_box_layout.setSpacing(8)
+        
         type_subsection = QLabel("Type of Structure")
-        type_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555; margin-top: 5px;")
-        structure_layout.addWidget(type_subsection)
+        type_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
+        type_box_layout.addWidget(type_subsection)
         
         # Type of Structure field
         type_row = QHBoxLayout()
@@ -729,18 +742,31 @@ class InputDock(QWidget):
         
         type_row.addWidget(type_field_label)
         type_row.addWidget(self.structure_type_combo, 1)
-        structure_layout.addLayout(type_row)
+        type_box_layout.addLayout(type_row)
         
         self.structure_note = QLabel("*Other structures not included")
         self.structure_note.setStyleSheet("font-size: 9px; color: #d32f2f; font-style: italic;")
         self.structure_note.setVisible(False)
-        structure_layout.addWidget(self.structure_note)
+        type_box_layout.addWidget(self.structure_note)
         
         self.structure_type_combo.currentTextChanged.connect(self.on_structure_type_changed)
+        structure_layout.addWidget(type_box)
         
-        # === Project Location (inside Superstructure) ===
+        # === Project Location Box ===
+        location_box = QFrame()
+        location_box.setStyleSheet("""
+            QFrame {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+            }
+        """)
+        location_box_layout = QVBoxLayout(location_box)
+        location_box_layout.setContentsMargins(8, 8, 8, 8)
+        location_box_layout.setSpacing(8)
+        
         loc_header = QHBoxLayout()
-        loc_header.setContentsMargins(0, 10, 0, 0)
         loc_title = QLabel("Project Location:")
         loc_title.setStyleSheet("font-size: 10px; font-weight: normal; color: #555;")
         loc_header.addWidget(loc_title)
@@ -753,9 +779,10 @@ class InputDock(QWidget):
                 color: white;
                 font-weight: bold;
                 border: none;
-                border-radius: 3px;
-                padding: 4px 12px;
-                font-size: 10px;
+                border-radius: 4px;
+                padding: 8px 20px;
+                font-size: 11px;
+                min-width: 80px;
             }
             QPushButton:hover {
                 background-color: #7a9a12;
@@ -763,7 +790,7 @@ class InputDock(QWidget):
         """)
         add_here_btn.clicked.connect(self.show_project_location_dialog)
         loc_header.addWidget(add_here_btn)
-        structure_layout.addLayout(loc_header)
+        location_box_layout.addLayout(loc_header)
         
         self.project_location_combo = NoScrollComboBox()
         self.project_location_combo.setObjectName(KEY_PROJECT_LOCATION)
@@ -771,10 +798,25 @@ class InputDock(QWidget):
         self.project_location_combo.currentTextChanged.connect(self.on_project_location_changed)
         self.project_location_combo.hide()
         
-        # === Geometric Details (inside Superstructure) ===
+        structure_layout.addWidget(location_box)
+        
+        # === Geometric Details Box ===
+        geo_box = QFrame()
+        geo_box.setStyleSheet("""
+            QFrame {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+            }
+        """)
+        geo_box_layout = QVBoxLayout(geo_box)
+        geo_box_layout.setContentsMargins(8, 8, 8, 8)
+        geo_box_layout.setSpacing(8)
+        
         geo_subsection = QLabel("Geometric Details")
-        geo_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555; margin-top: 10px;")
-        structure_layout.addWidget(geo_subsection)
+        geo_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
+        geo_box_layout.addWidget(geo_subsection)
         
         # Span
         span_row = QHBoxLayout()
@@ -788,7 +830,7 @@ class InputDock(QWidget):
         self.span_input.setPlaceholderText(f"{SPAN_MIN}-{SPAN_MAX} m")
         span_row.addWidget(span_label)
         span_row.addWidget(self.span_input, 1)
-        structure_layout.addLayout(span_row)
+        geo_box_layout.addLayout(span_row)
         
         # Carriageway Width
         carriageway_row = QHBoxLayout()
@@ -802,7 +844,7 @@ class InputDock(QWidget):
         self.carriageway_input.setPlaceholderText(f"Min {CARRIAGEWAY_WIDTH_MIN} m")
         carriageway_row.addWidget(carriageway_label)
         carriageway_row.addWidget(self.carriageway_input, 1)
-        structure_layout.addLayout(carriageway_row)
+        geo_box_layout.addLayout(carriageway_row)
         
         # Footpath
         footpath_row = QHBoxLayout()
@@ -817,7 +859,7 @@ class InputDock(QWidget):
         self.footpath_combo.currentTextChanged.connect(self.on_footpath_changed)
         footpath_row.addWidget(footpath_label)
         footpath_row.addWidget(self.footpath_combo, 1)
-        structure_layout.addLayout(footpath_row)
+        geo_box_layout.addLayout(footpath_row)
         
         # Skew Angle
         skew_row = QHBoxLayout()
@@ -832,11 +874,25 @@ class InputDock(QWidget):
         self.skew_input.setPlaceholderText(f"Default: {SKEW_ANGLE_DEFAULT}°")
         skew_row.addWidget(skew_label)
         skew_row.addWidget(self.skew_input, 1)
-        structure_layout.addLayout(skew_row)
+        geo_box_layout.addLayout(skew_row)
         
-        # === Additional Geometry (inside Superstructure) ===
+        structure_layout.addWidget(geo_box)
+        
+        # === Additional Geometry Box ===
+        add_geo_box = QFrame()
+        add_geo_box.setStyleSheet("""
+            QFrame {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+            }
+        """)
+        add_geo_box_layout = QVBoxLayout(add_geo_box)
+        add_geo_box_layout.setContentsMargins(8, 8, 8, 8)
+        add_geo_box_layout.setSpacing(8)
+        
         add_geo_header = QHBoxLayout()
-        add_geo_header.setContentsMargins(0, 10, 0, 5)
         add_geo_title = QLabel("Additional Geometry:")
         add_geo_title.setStyleSheet("font-size: 10px; font-weight: normal; color: #555;")
         add_geo_header.addWidget(add_geo_title)
@@ -849,9 +905,10 @@ class InputDock(QWidget):
                 color: white;
                 font-weight: bold;
                 border: none;
-                border-radius: 3px;
-                padding: 4px 12px;
-                font-size: 10px;
+                border-radius: 4px;
+                padding: 8px 20px;
+                font-size: 11px;
+                min-width: 80px;
             }
             QPushButton:hover {
                 background-color: #7a9a12;
@@ -859,12 +916,27 @@ class InputDock(QWidget):
         """)
         modify_geo_btn.clicked.connect(self.show_additional_inputs)
         add_geo_header.addWidget(modify_geo_btn)
-        structure_layout.addLayout(add_geo_header)
+        add_geo_box_layout.addLayout(add_geo_header)
         
-        # === Material Inputs (inside Superstructure) ===
+        structure_layout.addWidget(add_geo_box)
+        
+        # === Material Inputs Box ===
+        material_box = QFrame()
+        material_box.setStyleSheet("""
+            QFrame {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+            }
+        """)
+        material_box_layout = QVBoxLayout(material_box)
+        material_box_layout.setContentsMargins(8, 8, 8, 8)
+        material_box_layout.setSpacing(8)
+        
         mat_subsection = QLabel("Material Inputs")
-        mat_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555; margin-top: 10px;")
-        structure_layout.addWidget(mat_subsection)
+        mat_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
+        material_box_layout.addWidget(mat_subsection)
         
         # Material Properties header with button
         mat_prop_header = QHBoxLayout()
@@ -880,16 +952,17 @@ class InputDock(QWidget):
                 color: white;
                 font-weight: bold;
                 border: none;
-                border-radius: 3px;
-                padding: 4px 12px;
-                font-size: 10px;
+                border-radius: 4px;
+                padding: 8px 20px;
+                font-size: 11px;
+                min-width: 80px;
             }
             QPushButton:hover {
                 background-color: #7a9a12;
             }
         """)
         mat_prop_header.addWidget(modify_mat_btn)
-        structure_layout.addLayout(mat_prop_header)
+        material_box_layout.addLayout(mat_prop_header)
         
         # Girder
         girder_row = QHBoxLayout()
@@ -902,7 +975,7 @@ class InputDock(QWidget):
         self.girder_combo.addItems(VALUES_MATERIAL)
         girder_row.addWidget(girder_label)
         girder_row.addWidget(self.girder_combo, 1)
-        structure_layout.addLayout(girder_row)
+        material_box_layout.addLayout(girder_row)
         
         # Cross Bracing
         cross_bracing_row = QHBoxLayout()
@@ -915,7 +988,7 @@ class InputDock(QWidget):
         self.cross_bracing_combo.addItems(VALUES_MATERIAL)
         cross_bracing_row.addWidget(cross_bracing_label)
         cross_bracing_row.addWidget(self.cross_bracing_combo, 1)
-        structure_layout.addLayout(cross_bracing_row)
+        material_box_layout.addLayout(cross_bracing_row)
         
         # Deck
         deck_row = QHBoxLayout()
@@ -925,6 +998,13 @@ class InputDock(QWidget):
         self.deck_combo = NoScrollComboBox()
         self.deck_combo.setObjectName(KEY_DECK_CONCRETE_GRADE_BASIC)
         apply_field_style(self.deck_combo)
+        self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
+        self.deck_combo.setCurrentText("M25")
+        deck_row.addWidget(deck_label)
+        deck_row.addWidget(self.deck_combo, 1)
+        material_box_layout.addLayout(deck_row)
+        
+        structure_layout.addWidget(material_box)
         self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
         self.deck_combo.setCurrentText("M25")
         deck_row.addWidget(deck_label)
