@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
     QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog, QDialog, QCheckBox, QFrame
 )
-from PySide6.QtCore import Qt, QRegularExpression
-from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression, QSize
+from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator, QIcon
 from PySide6.QtSvgWidgets import *
 from common import *
 from additional_inputs import AdditionalInputsWidget
@@ -21,10 +21,10 @@ def apply_field_style(widget):
     widget.setMinimumHeight(28)
     
     if isinstance(widget, QComboBox):
-        # Get the path to the dropdown.svg file
+        # Get the paths to the down/up arrow SVGs
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        svg_path = os.path.join(current_dir, "dropdown.svg")
-        svg_url = svg_path.replace("\\", "/")
+        svg_down = os.path.join(current_dir, "dropdown_down.svg").replace("\\", "/")
+        svg_up = os.path.join(current_dir, "dropdown_up.svg").replace("\\", "/")
         
         style = f"""
         QComboBox {{
@@ -39,16 +39,23 @@ def apply_field_style(widget):
         QComboBox::drop-down {{
             subcontrol-origin: padding;
             subcontrol-position: center right;
-            width: 21px;
-            height: 19px;
-            border: none;
+            width: 22px;
+            height: 22px;
+            border: 1px solid #606060;
             background-color: transparent;
+            border-radius: 11px;
             right: 5px;
         }}
         QComboBox::down-arrow {{
-            image: url({svg_url});
-            width: 21px;
-            height: 19px;
+            image: url({svg_down});
+            width: 16px;
+            height: 16px;
+        }}
+        /* show up arrow when popup is open */
+        QComboBox::down-arrow:on {{
+            image: url({svg_up});
+            width: 16px;
+            height: 16px;
         }}
         QComboBox:hover {{
             border: 1px solid #909090;
@@ -704,30 +711,75 @@ class InputDock(QWidget):
         struct_header.addWidget(struct_title)
         struct_header.addStretch()
         
-        # Collapse/expand icon
-        collapse_icon = QLabel("⊖")
-        collapse_icon.setStyleSheet("font-size: 14px; color: #333; padding: 0px 5px;")
-        struct_header.addWidget(collapse_icon)
+        # Get the path to dropdown SVG
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        svg_down = os.path.join(base_dir, "dropdown_down.svg").replace("\\", "/")
+        svg_up = os.path.join(base_dir, "dropdown_up.svg").replace("\\", "/")
         
+        # Collapse/expand toggle using SVG icon
+        toggle_btn = QPushButton()
+        toggle_btn.setCheckable(True)
+        toggle_btn.setChecked(True)
+        toggle_btn.setIcon(QIcon(svg_up))
+        toggle_btn.setIconSize(QSize(16, 16))
+        toggle_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                padding: 2px;
+            }
+            QPushButton:hover {
+                background: transparent;
+            }
+            QPushButton:pressed {
+                background: transparent;
+            }
+        """)
+        struct_header.addWidget(toggle_btn)
+
         structure_layout.addLayout(struct_header)
+
+        # body widget that contains everything inside the Superstructure and can be hidden
+        structure_body = QFrame()
+        structure_body.setFrameShape(QFrame.NoFrame)
+        structure_body_layout = QVBoxLayout(structure_body)
+        structure_body_layout.setContentsMargins(0, 0, 0, 0)
+        structure_body_layout.setSpacing(10)
+        structure_body.setVisible(True)
+        structure_layout.addWidget(structure_body)
+
+        def _toggle_structure(checked):
+            # checked True means show body (open)
+            structure_body.setVisible(checked)
+            toggle_btn.setIcon(QIcon(svg_up if checked else svg_down))
+
+        toggle_btn.toggled.connect(_toggle_structure)
         
         # === Type of Structure Box ===
-        type_box = QFrame()
+        type_box = QGroupBox("Type of Structure")
         type_box.setStyleSheet("""
-            QFrame {
-                border: 1px solid #d0d0d0;
+            QGroupBox {
+                border: 1px solid #90AF13;
                 border-radius: 4px;
                 background-color: white;
                 padding: 8px;
+                margin-top: 12px;
+                font-size: 10px;
+                font-weight: bold;
+                color: #333;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 8px;
+                padding: 0 4px;
+                background-color: white;
+                color: #333;
             }
         """)
         type_box_layout = QVBoxLayout(type_box)
         type_box_layout.setContentsMargins(8, 8, 8, 8)
         type_box_layout.setSpacing(8)
-        
-        type_subsection = QLabel("Type of Structure")
-        type_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
-        type_box_layout.addWidget(type_subsection)
         
         # Type of Structure field
         type_row = QHBoxLayout()
@@ -743,32 +795,33 @@ class InputDock(QWidget):
         type_row.addWidget(type_field_label)
         type_row.addWidget(self.structure_type_combo, 1)
         type_box_layout.addLayout(type_row)
-        
+
         self.structure_note = QLabel("*Other structures not included")
         self.structure_note.setStyleSheet("font-size: 9px; color: #d32f2f; font-style: italic;")
         self.structure_note.setVisible(False)
         type_box_layout.addWidget(self.structure_note)
-        
+
         self.structure_type_combo.currentTextChanged.connect(self.on_structure_type_changed)
-        structure_layout.addWidget(type_box)
+        structure_body_layout.addWidget(type_box)
         
         # === Project Location Box ===
-        location_box = QFrame()
+        location_box = QGroupBox()
         location_box.setStyleSheet("""
-            QFrame {
-                border: 1px solid #d0d0d0;
+            QGroupBox {
+                border: 1px solid #90AF13;
                 border-radius: 4px;
                 background-color: white;
                 padding: 8px;
+                margin-top: 12px;
             }
         """)
         location_box_layout = QVBoxLayout(location_box)
         location_box_layout.setContentsMargins(8, 8, 8, 8)
         location_box_layout.setSpacing(8)
-        
+
         loc_header = QHBoxLayout()
         loc_title = QLabel("Project Location:")
-        loc_title.setStyleSheet("font-size: 10px; font-weight: normal; color: #555;")
+        loc_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
         loc_header.addWidget(loc_title)
         loc_header.addStretch()
         
@@ -798,25 +851,33 @@ class InputDock(QWidget):
         self.project_location_combo.currentTextChanged.connect(self.on_project_location_changed)
         self.project_location_combo.hide()
         
-        structure_layout.addWidget(location_box)
+        structure_body_layout.addWidget(location_box)
         
         # === Geometric Details Box ===
-        geo_box = QFrame()
+        geo_box = QGroupBox("Geometric Details")
         geo_box.setStyleSheet("""
-            QFrame {
-                border: 1px solid #d0d0d0;
+            QGroupBox {
+                border: 1px solid #90AF13;
                 border-radius: 4px;
                 background-color: white;
                 padding: 8px;
+                margin-top: 12px;
+                font-size: 10px;
+                font-weight: bold;
+                color: #333;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 8px;
+                padding: 0 4px;
+                background-color: white;
+                color: #333;
             }
         """)
         geo_box_layout = QVBoxLayout(geo_box)
         geo_box_layout.setContentsMargins(8, 8, 8, 8)
         geo_box_layout.setSpacing(8)
-        
-        geo_subsection = QLabel("Geometric Details")
-        geo_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
-        geo_box_layout.addWidget(geo_subsection)
         
         # Span
         span_row = QHBoxLayout()
@@ -876,27 +937,12 @@ class InputDock(QWidget):
         skew_row.addWidget(self.skew_input, 1)
         geo_box_layout.addLayout(skew_row)
         
-        structure_layout.addWidget(geo_box)
-        
-        # === Additional Geometry Box ===
-        add_geo_box = QFrame()
-        add_geo_box.setStyleSheet("""
-            QFrame {
-                border: 1px solid #d0d0d0;
-                border-radius: 4px;
-                background-color: white;
-                padding: 8px;
-            }
-        """)
-        add_geo_box_layout = QVBoxLayout(add_geo_box)
-        add_geo_box_layout.setContentsMargins(8, 8, 8, 8)
-        add_geo_box_layout.setSpacing(8)
-        
-        add_geo_header = QHBoxLayout()
-        add_geo_title = QLabel("Additional Geometry:")
-        add_geo_title.setStyleSheet("font-size: 10px; font-weight: normal; color: #555;")
-        add_geo_header.addWidget(add_geo_title)
-        add_geo_header.addStretch()
+        # Additional Geometry (inside Geometric Details)
+        add_geo_row = QHBoxLayout()
+        add_geo_label = QLabel("Additional Geometry:")
+        add_geo_label.setStyleSheet("font-size: 10px; color: #555; font-weight: bold;")
+        add_geo_label.setMinimumWidth(110)
+        add_geo_row.addWidget(add_geo_label)
         
         modify_geo_btn = QPushButton("Modify Here")
         modify_geo_btn.setStyleSheet("""
@@ -915,33 +961,41 @@ class InputDock(QWidget):
             }
         """)
         modify_geo_btn.clicked.connect(self.show_additional_inputs)
-        add_geo_header.addWidget(modify_geo_btn)
-        add_geo_box_layout.addLayout(add_geo_header)
+        add_geo_row.addWidget(modify_geo_btn, 1)
+        geo_box_layout.addLayout(add_geo_row)
         
-        structure_layout.addWidget(add_geo_box)
+        structure_body_layout.addWidget(geo_box)
         
         # === Material Inputs Box ===
-        material_box = QFrame()
+        material_box = QGroupBox("Material Inputs")
         material_box.setStyleSheet("""
-            QFrame {
-                border: 1px solid #d0d0d0;
+            QGroupBox {
+                border: 1px solid #90AF13;
                 border-radius: 4px;
                 background-color: white;
                 padding: 8px;
+                margin-top: 12px;
+                font-size: 10px;
+                font-weight: bold;
+                color: #333;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 8px;
+                padding: 0 4px;
+                background-color: white;
+                color: #333;
             }
         """)
         material_box_layout = QVBoxLayout(material_box)
         material_box_layout.setContentsMargins(8, 8, 8, 8)
         material_box_layout.setSpacing(8)
         
-        mat_subsection = QLabel("Material Inputs")
-        mat_subsection.setStyleSheet("font-size: 10px; font-weight: bold; color: #555;")
-        material_box_layout.addWidget(mat_subsection)
-        
         # Material Properties header with button
         mat_prop_header = QHBoxLayout()
         mat_prop_title = QLabel("Material Properties:")
-        mat_prop_title.setStyleSheet("font-size: 10px; font-weight: normal; color: #555;")
+        mat_prop_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
         mat_prop_header.addWidget(mat_prop_title)
         mat_prop_header.addStretch()
         
@@ -1004,16 +1058,71 @@ class InputDock(QWidget):
         deck_row.addWidget(self.deck_combo, 1)
         material_box_layout.addLayout(deck_row)
         
-        structure_layout.addWidget(material_box)
-        self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
-        self.deck_combo.setCurrentText("M25")
-        deck_row.addWidget(deck_label)
-        deck_row.addWidget(self.deck_combo, 1)
-        structure_layout.addLayout(deck_row)
+        structure_body_layout.addWidget(material_box)
         
         # Close the Superstructure section
         structure_group.setLayout(structure_layout)
         group_container_layout.addWidget(structure_group)
+
+        # === Substructure Section (empty body for now) ===
+        sub_group = QGroupBox()
+        sub_group.setStyleSheet("""
+            QGroupBox {
+                border: 2px solid #90AF13;
+                border-radius: 5px;
+                margin-top: 8px;
+                padding-top: 5px;
+                background-color: white;
+            }
+        """)
+        sub_layout = QVBoxLayout()
+        sub_layout.setContentsMargins(10, 10, 10, 10)
+        sub_layout.setSpacing(8)
+
+        # Header with toggle
+        sub_header = QHBoxLayout()
+        sub_title = QLabel("Substructure")
+        sub_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        sub_header.addWidget(sub_title)
+        sub_header.addStretch()
+
+        sub_toggle = QPushButton()
+        sub_toggle.setCheckable(True)
+        sub_toggle.setChecked(True)
+        sub_toggle.setIcon(QIcon(svg_up))
+        sub_toggle.setIconSize(QSize(16, 16))
+        sub_toggle.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                padding: 2px;
+            }
+            QPushButton:hover {
+                background: transparent;
+            }
+            QPushButton:pressed {
+                background: transparent;
+            }
+        """)
+        sub_header.addWidget(sub_toggle)
+        sub_layout.addLayout(sub_header)
+
+        sub_body = QFrame()
+        sub_body.setFrameShape(QFrame.NoFrame)
+        sub_body_layout = QVBoxLayout(sub_body)
+        sub_body_layout.setContentsMargins(0,0,0,0)
+        sub_body_layout.setSpacing(6)
+        sub_body.setVisible(True)
+        sub_layout.addWidget(sub_body)
+
+        def _toggle_sub(checked):
+            sub_body.setVisible(checked)
+            sub_toggle.setIcon(QIcon(svg_up if checked else svg_down))
+
+        sub_toggle.toggled.connect(_toggle_sub)
+
+        sub_group.setLayout(sub_layout)
+        group_container_layout.addWidget(sub_group)
         
         group_container_layout.addStretch()
         scroll_area.setWidget(group_container)

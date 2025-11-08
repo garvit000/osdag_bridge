@@ -18,10 +18,10 @@ from common import *
 
 def get_combobox_style():
     """Return the common stylesheet for dropdowns with the SVG icon from file."""
-    # Get the path to the dropdown.svg file
+    # Get the paths to the down/up arrow SVG files
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    svg_path = os.path.join(current_dir, "dropdown.svg")
-    svg_url = svg_path.replace("\\", "/")
+    svg_down = os.path.join(current_dir, "dropdown_down.svg").replace("\\", "/")
+    svg_up = os.path.join(current_dir, "dropdown_up.svg").replace("\\", "/")
     
     return f"""
         QComboBox {{
@@ -42,15 +42,23 @@ def get_combobox_style():
         QComboBox::drop-down {{
             subcontrol-origin: padding;
             subcontrol-position: center right;
-            width: 30px;
-            border: none;
+            width: 26px;
+            height: 26px;
+            border: 1px solid #606060;
+            border-radius: 13px;
             background: transparent;
             right: 8px;
         }}
         QComboBox::down-arrow {{
-            image: url({svg_url});
-            width: 21px;
-            height: 19px;
+            image: url({svg_down});
+            width: 16px;
+            height: 16px;
+        }}
+        /* when popup is open show the up arrow */
+        QComboBox::down-arrow:on {{
+            image: url({svg_up});
+            width: 16px;
+            height: 16px;
         }}
         QComboBox QAbstractItemView {{
             border: 1px solid #b8b8b8;
