@@ -1452,40 +1452,18 @@ class AdditionalInputsWidget(QWidget):
         self.section_properties_tab = SectionPropertiesTab()
         self.tabs.addTab(self.section_properties_tab, "Section Properties")
         
-        # Sub-Tab 3: Dead Load Inputs
-        dead_load_tab = self.create_placeholder_tab(
-            "Dead Load Inputs",
+        # Sub-Tab 3: Loading
+        loading_tab = self.create_placeholder_tab(
+            "Loading",
             "This tab will contain:\n\n" +
-            "• Self Weight (with factor)\n" +
-            "• Superimposed Load (Wearing Coat)\n" +
-            "• Load from Railing\n" +
-            "• Load from Crash Barrier\n" +
-            "• Additional Superimposed Load (Pressure/Line/Point)\n\n" +
+            "• Dead Load (Self Weight, Wearing Coat, etc.)\n" +
+            "• Live Load (IRC Vehicles, Custom Loads)\n" +
+            "• Lateral Load (Wind, Seismic)\n\n" +
             "Implementation in progress..."
         )
-        self.tabs.addTab(dead_load_tab, "Dead Load Inputs")
+        self.tabs.addTab(loading_tab, "Loading")
         
-        # Sub-Tab 4: Live Load Inputs
-        live_load_tab = self.create_placeholder_tab(
-            "Live Load Inputs",
-            "This tab will contain:\n\n" +
-            "• Standard IRC Vehicles (Class A, 70R, AA, SV)\n" +
-            "• Custom Vehicle Configuration\n" +
-            "• Footpath Pressure (Automatic/User-defined)\n\n" +
-            "Implementation in progress..."
-        )
-        self.tabs.addTab(live_load_tab, "Live Load Inputs")
-        
-        # Sub-Tab 5: Lateral Load
-        lateral_load_tab = self.create_placeholder_tab(
-            "Lateral Load",
-            "Lateral load definition is under development.\n\n" +
-            "This will include wind loads, seismic loads, and other\n" +
-            "lateral forces acting on the bridge structure."
-        )
-        self.tabs.addTab(lateral_load_tab, "Lateral Load")
-        
-        # Sub-Tab 6: Support Conditions
+        # Sub-Tab 4: Support Conditions
         support_tab = self.create_placeholder_tab(
             "Support Conditions",
             "This tab will contain:\n\n" +
@@ -1497,6 +1475,29 @@ class AdditionalInputsWidget(QWidget):
             "Implementation in progress..."
         )
         self.tabs.addTab(support_tab, "Support Conditions")
+        
+        # Sub-Tab 5: Shear Connection
+        shear_connection_tab = self.create_placeholder_tab(
+            "Shear Connection",
+            "This tab will contain:\n\n" +
+            "• Shear Connector Type\n" +
+            "• Connector Size and Spacing\n" +
+            "• Connection Details\n\n" +
+            "Implementation in progress..."
+        )
+        self.tabs.addTab(shear_connection_tab, "Shear Connection")
+        
+        # Sub-Tab 6: Analysis and Design Options
+        analysis_design_tab = self.create_placeholder_tab(
+            "Analysis and Design Options",
+            "This tab will contain:\n\n" +
+            "• Analysis Method\n" +
+            "• Design Code Options\n" +
+            "• Safety Factors\n" +
+            "• Other Design Parameters\n\n" +
+            "Implementation in progress..."
+        )
+        self.tabs.addTab(analysis_design_tab, "Analysis and Design Options")
         
         main_layout.addWidget(self.tabs)
         
