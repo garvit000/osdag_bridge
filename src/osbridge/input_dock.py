@@ -631,7 +631,20 @@ class InputDock(QWidget):
         input_dock_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         top_bar.addWidget(input_dock_btn)
         
+        # Get lock icon path
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        lock_icon_path = os.path.join(current_dir, "lock.svg")
+        
+        # Additional Inputs button with lock icon on the right
         additional_inputs_btn = QPushButton("Additional Inputs")
+        
+        # Try to load the icon
+        if os.path.exists(lock_icon_path):
+            lock_icon = QIcon(lock_icon_path)
+            additional_inputs_btn.setIcon(lock_icon)
+            additional_inputs_btn.setIconSize(QSize(14, 14))
+            additional_inputs_btn.setLayoutDirection(Qt.RightToLeft)  # This puts icon on the right
+        
         additional_inputs_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
@@ -641,6 +654,7 @@ class InputDock(QWidget):
                 border-radius: 3px;
                 padding: 6px 16px;
                 min-height: 28px;
+                text-align: left;
             }
             QPushButton:hover {
                 background-color: #f5f5f5;
