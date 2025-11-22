@@ -211,7 +211,7 @@ class BridgeGeometryTab(QWidget):
     
     def init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
         # TOP: Diagram placeholder
@@ -219,8 +219,7 @@ class BridgeGeometryTab(QWidget):
         diagram_widget.setStyleSheet("""
             QWidget {
                 background-color: #d9d9d9;
-                border: 1px solid #b0b0b0;
-                border-radius: 8px;
+                border-bottom: 1px solid #b0b0b0;
             }
         """)
         diagram_widget.setMinimumHeight(150)
@@ -244,7 +243,6 @@ class BridgeGeometryTab(QWidget):
         diagram_layout.addWidget(diagram_label, 0, Qt.AlignCenter)
         
         main_layout.addWidget(diagram_widget)
-        main_layout.addSpacing(10)
         
         # BOTTOM: Tabbed Input Interface
         input_container = QWidget()
@@ -254,7 +252,7 @@ class BridgeGeometryTab(QWidget):
             }
         """)
         input_layout = QVBoxLayout(input_container)
-        input_layout.setContentsMargins(0, 0, 0, 0)
+        input_layout.setContentsMargins(10, 10, 10, 10)
         input_layout.setSpacing(0)
         
         # Create sub-tabs for different input categories
@@ -263,13 +261,13 @@ class BridgeGeometryTab(QWidget):
             QTabWidget::pane {
                 border: 1px solid #b0b0b0;
                 border-top: none;
-                background-color: #f5f5f5;
+                background-color: white;
                 border-radius: 0px 0px 8px 8px;
             }
             QTabBar::tab {
                 background-color: #e8e8e8;
                 color: #555;
-                padding: 10px 20px;
+                padding: 8px 20px;
                 border: 1px solid #b0b0b0;
                 border-bottom: none;
                 border-right: none;
@@ -312,15 +310,29 @@ class BridgeGeometryTab(QWidget):
     def create_layout_tab(self):
         """Create the Layout tab with girder spacing and deck overhang"""
         layout_widget = QWidget()
-        layout_widget.setStyleSheet("background-color: #f5f5f5;")
+        layout_widget.setStyleSheet("background-color: white;")
         layout_layout = QVBoxLayout(layout_widget)
         layout_layout.setContentsMargins(25, 25, 25, 25)
         layout_layout.setSpacing(20)
         
-        # Title
+        # --- Inputs Group ---
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(20, 20, 20, 20)
+        inputs_layout.setSpacing(15)
+        
+        # Title inside the group
         title_label = QLabel("Inputs:")
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
-        layout_layout.addWidget(title_label)
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000; border: none;")
+        inputs_layout.addWidget(title_label)
         
         # Create grid for inputs
         grid = QGridLayout()
@@ -331,7 +343,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 0: Girder Spacing and No. of Girders
         girder_spacing_label = QLabel("Girder Spacing (m):")
-        girder_spacing_label.setStyleSheet("font-size: 11px; color: #000;")
+        girder_spacing_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         girder_spacing_label.setMinimumWidth(150)
         self.girder_spacing = QLineEdit()
         self.girder_spacing.setValidator(QDoubleValidator(0.01, 50.0, 3))
@@ -340,7 +352,7 @@ class BridgeGeometryTab(QWidget):
         self.girder_spacing.textChanged.connect(self.on_girder_spacing_changed)
         
         no_girders_label = QLabel("No. of Girders:")
-        no_girders_label.setStyleSheet("font-size: 11px; color: #000;")
+        no_girders_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         no_girders_label.setMinimumWidth(150)
         self.no_of_girders = QLineEdit()
         self.no_of_girders.setValidator(QIntValidator(2, 100))
@@ -354,7 +366,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 1: Deck Overhang Width
         deck_overhang_label = QLabel("Deck Overhang Width (m):")
-        deck_overhang_label.setStyleSheet("font-size: 11px; color: #000;")
+        deck_overhang_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         deck_overhang_label.setMinimumWidth(150)
         self.deck_overhang = QLineEdit()
         self.deck_overhang.setValidator(QDoubleValidator(0.0, 10.0, 3))
@@ -365,7 +377,36 @@ class BridgeGeometryTab(QWidget):
         grid.addWidget(deck_overhang_label, 1, 0, Qt.AlignLeft)
         grid.addWidget(self.deck_overhang, 1, 1)
         
-        layout_layout.addLayout(grid)
+        inputs_layout.addLayout(grid)
+        layout_layout.addWidget(inputs_group)
+        
+        # --- Overall Bridge Width Group ---
+        width_group = QGroupBox()
+        width_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        width_layout = QHBoxLayout(width_group)
+        width_layout.setContentsMargins(20, 20, 20, 20)
+        width_layout.setSpacing(40)
+        
+        overall_width_label = QLabel("Overall Bridge Width (m):")
+        overall_width_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        overall_width_label.setMinimumWidth(150)
+        
+        self.overall_width_display = QLineEdit()
+        self.overall_width_display.setReadOnly(True)
+        self.style_input_field(self.overall_width_display)
+        
+        width_layout.addWidget(overall_width_label)
+        width_layout.addWidget(self.overall_width_display)
+        width_layout.addStretch()
+        
+        layout_layout.addWidget(width_group)
         layout_layout.addStretch()
         
         self.input_tabs.addTab(layout_widget, "Layout")
@@ -373,15 +414,29 @@ class BridgeGeometryTab(QWidget):
     def create_deck_tab(self):
         """Create the Deck tab with deck and footpath parameters"""
         deck_widget = QWidget()
-        deck_widget.setStyleSheet("background-color: #f5f5f5;")
+        deck_widget.setStyleSheet("background-color: white;")
         deck_layout = QVBoxLayout(deck_widget)
         deck_layout.setContentsMargins(25, 25, 25, 25)
         deck_layout.setSpacing(20)
         
+        # --- Deck Inputs Group ---
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(20, 20, 20, 20)
+        inputs_layout.setSpacing(15)
+        
         # Title
-        title_label = QLabel("Inputs:")
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
-        deck_layout.addWidget(title_label)
+        title_label = QLabel("Deck Inputs:")
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000; border: none;")
+        inputs_layout.addWidget(title_label)
         
         # Create grid for inputs
         grid = QGridLayout()
@@ -390,48 +445,29 @@ class BridgeGeometryTab(QWidget):
         grid.setColumnStretch(1, 1)
         grid.setColumnStretch(3, 1)
         
-        # Row 0: Deck Thickness and Material
+        # Row 0: Deck Thickness and Decking Plate
         deck_thickness_label = QLabel("Deck Thickness:")
-        deck_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        deck_thickness_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         deck_thickness_label.setMinimumWidth(150)
         self.deck_thickness = QLineEdit()
         self.deck_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
         self.style_input_field(self.deck_thickness)
         
-        deck_material_label = QLabel("Material:")
-        deck_material_label.setStyleSheet("font-size: 11px; color: #000;")
-        deck_material_label.setMinimumWidth(150)
-        self.deck_material = QComboBox()
-        self.deck_material.addItems(VALUES_DECK_CONCRETE_GRADE)
-        self.style_input_field(self.deck_material)
+        decking_plate_label = QLabel("Decking Plate:")
+        decking_plate_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        decking_plate_label.setMinimumWidth(150)
+        self.decking_plate = QComboBox()
+        self.decking_plate.addItems(VALUES_DECKING_PLATE)
+        self.style_input_field(self.decking_plate)
         
         grid.addWidget(deck_thickness_label, 0, 0, Qt.AlignLeft)
         grid.addWidget(self.deck_thickness, 0, 1)
-        grid.addWidget(deck_material_label, 0, 2, Qt.AlignLeft)
-        grid.addWidget(self.deck_material, 0, 3)
+        grid.addWidget(decking_plate_label, 0, 2, Qt.AlignLeft)
+        grid.addWidget(self.decking_plate, 0, 3)
         
-        # Row 1: Decking Plate (with circular icon) and Spacing
-        decking_plate_label = QLabel("Decking Plate:")
-        decking_plate_label.setStyleSheet("font-size: 11px; color: #000;")
-        decking_plate_label.setMinimumWidth(150)
-        self.decking_plate = QComboBox()
-        self.decking_plate.addItems(["None", "Type A", "Type B"])
-        self.style_input_field(self.decking_plate)
-        
-        decking_spacing_label = QLabel("Spacing:")
-        decking_spacing_label.setStyleSheet("font-size: 11px; color: #000;")
-        decking_spacing_label.setMinimumWidth(150)
-        self.decking_spacing = QLineEdit()
-        self.style_input_field(self.decking_spacing)
-        
-        grid.addWidget(decking_plate_label, 1, 0, Qt.AlignLeft)
-        grid.addWidget(self.decking_plate, 1, 1)
-        grid.addWidget(decking_spacing_label, 1, 2, Qt.AlignLeft)
-        grid.addWidget(self.decking_spacing, 1, 3)
-        
-        # Row 2: Footpath Width and Footpath Thickness
+        # Row 1: Footpath Width and Footpath Thickness
         footpath_width_label = QLabel("Footpath Width (m):")
-        footpath_width_label.setStyleSheet("font-size: 11px; color: #000;")
+        footpath_width_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         footpath_width_label.setMinimumWidth(150)
         self.footpath_width = QLineEdit()
         self.footpath_width.setValidator(QDoubleValidator(MIN_FOOTPATH_WIDTH, 5.0, 3))
@@ -439,48 +475,50 @@ class BridgeGeometryTab(QWidget):
         self.footpath_width.textChanged.connect(self.on_footpath_width_changed)
         
         footpath_thickness_label = QLabel("Footpath Thickness :")
-        footpath_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        footpath_thickness_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         footpath_thickness_label.setMinimumWidth(150)
         self.footpath_thickness = QLineEdit()
         self.footpath_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
         self.style_input_field(self.footpath_thickness)
         
-        grid.addWidget(footpath_width_label, 2, 0, Qt.AlignLeft)
-        grid.addWidget(self.footpath_width, 2, 1)
-        grid.addWidget(footpath_thickness_label, 2, 2, Qt.AlignLeft)
-        grid.addWidget(self.footpath_thickness, 2, 3)
+        grid.addWidget(footpath_width_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.footpath_width, 1, 1)
+        grid.addWidget(footpath_thickness_label, 1, 2, Qt.AlignLeft)
+        grid.addWidget(self.footpath_thickness, 1, 3)
         
-        # Row 3: Size and Safety Kerb Width
-        size_label = QLabel("Size:")
-        size_label.setStyleSheet("font-size: 11px; color: #000;")
-        size_label.setMinimumWidth(150)
-        self.footpath_size = QLineEdit()
-        self.style_input_field(self.footpath_size)
-        
-        safety_kerb_width_label = QLabel("Safety Kerb Width (m):")
-        safety_kerb_width_label.setStyleSheet("font-size: 11px; color: #000;")
-        safety_kerb_width_label.setMinimumWidth(150)
-        self.safety_kerb_width = QLineEdit()
-        self.safety_kerb_width.setValidator(QDoubleValidator(MIN_SAFETY_KERB_WIDTH, 2.0, 3))
-        self.style_input_field(self.safety_kerb_width)
-        
-        grid.addWidget(size_label, 3, 0, Qt.AlignLeft)
-        grid.addWidget(self.footpath_size, 3, 1)
-        grid.addWidget(safety_kerb_width_label, 3, 2, Qt.AlignLeft)
-        grid.addWidget(self.safety_kerb_width, 3, 3)
-        
-        # Row 4: Safety Kerb Thickness
+        # Row 2: Safety Kerb Thickness and Safety Kerb Width
         safety_kerb_thickness_label = QLabel("Safety Kerb Thickness (mm):")
-        safety_kerb_thickness_label.setStyleSheet("font-size: 11px; color: #000;")
+        safety_kerb_thickness_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         safety_kerb_thickness_label.setMinimumWidth(150)
         self.safety_kerb_thickness = QLineEdit()
         self.safety_kerb_thickness.setValidator(QDoubleValidator(0.0, 500.0, 0))
         self.style_input_field(self.safety_kerb_thickness)
         
-        grid.addWidget(safety_kerb_thickness_label, 4, 0, Qt.AlignLeft)
-        grid.addWidget(self.safety_kerb_thickness, 4, 1)
+        safety_kerb_width_label = QLabel("Safety Kerb Width (m):")
+        safety_kerb_width_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        safety_kerb_width_label.setMinimumWidth(150)
+        self.safety_kerb_width = QLineEdit()
+        self.safety_kerb_width.setValidator(QDoubleValidator(MIN_SAFETY_KERB_WIDTH, 2.0, 3))
+        self.style_input_field(self.safety_kerb_width)
         
-        deck_layout.addLayout(grid)
+        grid.addWidget(safety_kerb_thickness_label, 2, 0, Qt.AlignLeft)
+        grid.addWidget(self.safety_kerb_thickness, 2, 1)
+        grid.addWidget(safety_kerb_width_label, 2, 2, Qt.AlignLeft)
+        grid.addWidget(self.safety_kerb_width, 2, 3)
+        
+        # Row 3: Load Case
+        load_case_label = QLabel("Load Case:")
+        load_case_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        load_case_label.setMinimumWidth(150)
+        self.deck_load_case = QComboBox()
+        self.deck_load_case.addItems(VALUES_LOAD_CASE)
+        self.style_input_field(self.deck_load_case)
+        
+        grid.addWidget(load_case_label, 3, 0, Qt.AlignLeft)
+        grid.addWidget(self.deck_load_case, 3, 1)
+        
+        inputs_layout.addLayout(grid)
+        deck_layout.addWidget(inputs_group)
         deck_layout.addStretch()
         
         self.input_tabs.addTab(deck_widget, "Deck")
@@ -488,15 +526,29 @@ class BridgeGeometryTab(QWidget):
     def create_crash_barrier_tab(self):
         """Create the Crash Barrier tab"""
         crash_widget = QWidget()
-        crash_widget.setStyleSheet("background-color: #f5f5f5;")
+        crash_widget.setStyleSheet("background-color: white;")
         crash_layout = QVBoxLayout(crash_widget)
         crash_layout.setContentsMargins(25, 25, 25, 25)
         crash_layout.setSpacing(20)
         
+        # --- Inputs Group ---
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(20, 20, 20, 20)
+        inputs_layout.setSpacing(15)
+        
         # Title
         title_label = QLabel("Inputs:")
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
-        crash_layout.addWidget(title_label)
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000; border: none;")
+        inputs_layout.addWidget(title_label)
         
         # Create grid for inputs
         grid = QGridLayout()
@@ -507,7 +559,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 0: Crash Barrier Type
         crash_type_label = QLabel("Crash Barrier Type:")
-        crash_type_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_type_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         crash_type_label.setMinimumWidth(180)
         self.crash_barrier_type = QComboBox()
         self.crash_barrier_type.addItems(VALUES_CRASH_BARRIER_TYPE)
@@ -519,7 +571,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 1: Crash Barrier Width
         crash_width_label = QLabel("Crash Barrier Width (m):")
-        crash_width_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_width_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         crash_width_label.setMinimumWidth(180)
         self.crash_barrier_width = QLineEdit()
         self.crash_barrier_width.setValidator(QDoubleValidator(0.0, 2.0, 3))
@@ -532,7 +584,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 2: Crash Barrier Material density
         crash_density_label = QLabel("Crash Barrier Material density")
-        crash_density_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_density_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         crash_density_label.setMinimumWidth(180)
         self.crash_barrier_density = QLineEdit()
         self.crash_barrier_density.setValidator(QDoubleValidator(0.0, 100.0, 2))
@@ -543,7 +595,7 @@ class BridgeGeometryTab(QWidget):
         
         # Row 3: Crash Barrier Area
         crash_area_label = QLabel("Crash Barrier Area (m2 ):")
-        crash_area_label.setStyleSheet("font-size: 11px; color: #000;")
+        crash_area_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
         crash_area_label.setMinimumWidth(180)
         self.crash_barrier_area = QLineEdit()
         self.crash_barrier_area.setValidator(QDoubleValidator(0.0, 10.0, 4))
@@ -552,7 +604,20 @@ class BridgeGeometryTab(QWidget):
         grid.addWidget(crash_area_label, 3, 0, Qt.AlignLeft)
         grid.addWidget(self.crash_barrier_area, 3, 1, 1, 3)
         
-        crash_layout.addLayout(grid)
+        # Row 4: Load Case
+        load_case_label = QLabel("Load Case:")
+        load_case_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        load_case_label.setMinimumWidth(180)
+        self.crash_load_case = QComboBox()
+        self.crash_load_case.addItems(VALUES_LOAD_CASE)
+        self.crash_load_case.setCurrentText("Super-imposed Dead Load (SIDL)")
+        self.style_input_field(self.crash_load_case)
+        
+        grid.addWidget(load_case_label, 4, 0, Qt.AlignLeft)
+        grid.addWidget(self.crash_load_case, 4, 1, 1, 3)
+        
+        inputs_layout.addLayout(grid)
+        crash_layout.addWidget(inputs_group)
         crash_layout.addStretch()
         
         self.input_tabs.addTab(crash_widget, "Crash Barrier")
@@ -562,39 +627,84 @@ class BridgeGeometryTab(QWidget):
         railing_widget = QWidget()
         railing_widget.setStyleSheet("background-color: white;")
         railing_layout = QVBoxLayout(railing_widget)
-        railing_layout.setContentsMargins(20, 20, 20, 20)
-        railing_layout.setSpacing(15)
+        railing_layout.setContentsMargins(25, 25, 25, 25)
+        railing_layout.setSpacing(20)
+        
+        # --- Inputs Group ---
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(20, 20, 20, 20)
+        inputs_layout.setSpacing(15)
         
         # Title
         title_label = QLabel("Inputs:")
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #333;")
-        railing_layout.addWidget(title_label)
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000; border: none;")
+        inputs_layout.addWidget(title_label)
         
         # Create grid for inputs
         grid = QGridLayout()
         grid.setHorizontalSpacing(40)
         grid.setVerticalSpacing(20)
         grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
         
-        # Railing inputs would go here (placeholder for now)
-        railing_info = QLabel("Railing details not yet configured")
-        railing_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
-        grid.addWidget(railing_info, 0, 0, 1, 2)
-        
+        # Row 0: Railing Width
+        railing_width_label = QLabel("Railing Width (mm):")
+        railing_width_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        railing_width_label.setMinimumWidth(180)
         self.railing_width = QLineEdit()
-        self.railing_width.setValidator(QDoubleValidator(0.0, 1.0, 3))
-        self.railing_width.setText(str(DEFAULT_RAILING_WIDTH))
+        self.railing_width.setValidator(QDoubleValidator(0.0, 1000.0, 1))
         self.style_input_field(self.railing_width)
         self.railing_width.textChanged.connect(self.recalculate_girders)
-        self.railing_width.hide()  # Hidden for now
         
+        grid.addWidget(railing_width_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.railing_width, 0, 1, 1, 3)
+        
+        # Row 1: Railing Height
+        railing_height_label = QLabel("Railing Height (mm):")
+        railing_height_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        railing_height_label.setMinimumWidth(180)
         self.railing_height = QLineEdit()
-        self.railing_height.setValidator(QDoubleValidator(MIN_RAILING_HEIGHT, 3.0, 3))
+        self.railing_height.setValidator(QDoubleValidator(0.0, 2000.0, 1))
         self.style_input_field(self.railing_height)
         self.railing_height.editingFinished.connect(self.validate_railing_height)
-        self.railing_height.hide()  # Hidden for now
         
-        railing_layout.addLayout(grid)
+        grid.addWidget(railing_height_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.railing_height, 1, 1, 1, 3)
+        
+        # Row 2: Railing Load
+        railing_load_label = QLabel("Railing Load (kN/m)")
+        railing_load_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        railing_load_label.setMinimumWidth(180)
+        self.railing_load = QLineEdit()
+        self.railing_load.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.style_input_field(self.railing_load)
+        
+        grid.addWidget(railing_load_label, 2, 0, Qt.AlignLeft)
+        grid.addWidget(self.railing_load, 2, 1, 1, 3)
+        
+        # Row 3: Load Case
+        load_case_label = QLabel("Load Case:")
+        load_case_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        load_case_label.setMinimumWidth(180)
+        self.railing_load_case = QComboBox()
+        self.railing_load_case.addItems(VALUES_LOAD_CASE)
+        self.railing_load_case.setCurrentText("Super-imposed Dead Load (SIDL)")
+        self.style_input_field(self.railing_load_case)
+        
+        grid.addWidget(load_case_label, 3, 0, Qt.AlignLeft)
+        grid.addWidget(self.railing_load_case, 3, 1, 1, 3)
+        
+        inputs_layout.addLayout(grid)
+        railing_layout.addWidget(inputs_group)
         railing_layout.addStretch()
         
         self.input_tabs.addTab(railing_widget, "Railing")
@@ -602,28 +712,84 @@ class BridgeGeometryTab(QWidget):
     def create_wearing_course_tab(self):
         """Create the Wearing Course tab"""
         wearing_widget = QWidget()
-        wearing_widget.setStyleSheet("background-color: #f5f5f5;")
+        wearing_widget.setStyleSheet("background-color: white;")
         wearing_layout = QVBoxLayout(wearing_widget)
         wearing_layout.setContentsMargins(25, 25, 25, 25)
         wearing_layout.setSpacing(20)
         
+        # --- Inputs Group ---
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 2px solid #a0a0a0;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(20, 20, 20, 20)
+        inputs_layout.setSpacing(15)
+        
         # Title
         title_label = QLabel("Inputs:")
-        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000;")
-        wearing_layout.addWidget(title_label)
+        title_label.setStyleSheet("font-size: 12px; font-weight: bold; color: #000; border: none;")
+        inputs_layout.addWidget(title_label)
         
         # Create grid for inputs
         grid = QGridLayout()
         grid.setHorizontalSpacing(40)
         grid.setVerticalSpacing(20)
         grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
         
-        # Wearing course inputs (placeholder)
-        wearing_info = QLabel("Wearing course details not yet configured")
-        wearing_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
-        grid.addWidget(wearing_info, 0, 0, 1, 2)
+        # Row 0: Wearing Course Material
+        wc_material_label = QLabel("Wearing Course Material:")
+        wc_material_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        wc_material_label.setMinimumWidth(180)
+        self.wc_material = QComboBox()
+        self.wc_material.addItems(VALUES_WEARING_COAT_MATERIAL)
+        self.style_input_field(self.wc_material)
         
-        wearing_layout.addLayout(grid)
+        grid.addWidget(wc_material_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.wc_material, 0, 1, 1, 3)
+        
+        # Row 1: Wearing Coat Density
+        wc_density_label = QLabel("Wearing Coat Density (kN/m^3):")
+        wc_density_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        wc_density_label.setMinimumWidth(180)
+        self.wc_density = QLineEdit()
+        self.wc_density.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.style_input_field(self.wc_density)
+        
+        grid.addWidget(wc_density_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.wc_density, 1, 1, 1, 3)
+        
+        # Row 2: Wearing Coat Thickness
+        wc_thickness_label = QLabel("Wearing Coat Thickness (mm):")
+        wc_thickness_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        wc_thickness_label.setMinimumWidth(180)
+        self.wc_thickness = QLineEdit()
+        self.wc_thickness.setValidator(QDoubleValidator(0.0, 500.0, 1))
+        self.style_input_field(self.wc_thickness)
+        
+        grid.addWidget(wc_thickness_label, 2, 0, Qt.AlignLeft)
+        grid.addWidget(self.wc_thickness, 2, 1, 1, 3)
+        
+        # Row 3: Load Case
+        load_case_label = QLabel("Load Case:")
+        load_case_label.setStyleSheet("font-size: 11px; color: #555; border: none;")
+        load_case_label.setMinimumWidth(180)
+        self.wc_load_case = QComboBox()
+        self.wc_load_case.addItems(VALUES_LOAD_CASE)
+        self.wc_load_case.setCurrentText("Dead Load of Wearing Course (DW)")
+        self.style_input_field(self.wc_load_case)
+        
+        grid.addWidget(load_case_label, 3, 0, Qt.AlignLeft)
+        grid.addWidget(self.wc_load_case, 3, 1, 1, 3)
+        
+        inputs_layout.addLayout(grid)
+        wearing_layout.addWidget(inputs_group)
         wearing_layout.addStretch()
         
         self.input_tabs.addTab(wearing_widget, "Wearing Course")
@@ -631,7 +797,7 @@ class BridgeGeometryTab(QWidget):
     def create_lane_details_tab(self):
         """Create the Lane Details tab"""
         lane_widget = QWidget()
-        lane_widget.setStyleSheet("background-color: #f5f5f5;")
+        lane_widget.setStyleSheet("background-color: white;")
         lane_layout = QVBoxLayout(lane_widget)
         lane_layout.setContentsMargins(25, 25, 25, 25)
         lane_layout.setSpacing(20)
@@ -647,10 +813,27 @@ class BridgeGeometryTab(QWidget):
         grid.setVerticalSpacing(20)
         grid.setColumnStretch(1, 1)
         
-        # Lane details inputs (placeholder)
-        lane_info = QLabel("Lane details not yet configured")
-        lane_info.setStyleSheet("font-size: 11px; color: #999; font-style: italic;")
-        grid.addWidget(lane_info, 0, 0, 1, 2)
+        # Row 0: No. of Lanes
+        no_lanes_label = QLabel("No. of Lanes:")
+        no_lanes_label.setStyleSheet("font-size: 11px; color: #555;")
+        no_lanes_label.setMinimumWidth(150)
+        self.no_of_lanes = QComboBox()
+        self.no_of_lanes.addItems(VALUES_NO_OF_LANES)
+        self.style_input_field(self.no_of_lanes)
+        
+        grid.addWidget(no_lanes_label, 0, 0, Qt.AlignLeft)
+        grid.addWidget(self.no_of_lanes, 0, 1)
+        
+        # Row 1: Lane Width
+        lane_width_label = QLabel("Lane Width (m):")
+        lane_width_label.setStyleSheet("font-size: 11px; color: #555;")
+        lane_width_label.setMinimumWidth(150)
+        self.lane_width = QLineEdit()
+        self.lane_width.setValidator(QDoubleValidator(0.0, 20.0, 2))
+        self.style_input_field(self.lane_width)
+        
+        grid.addWidget(lane_width_label, 1, 0, Qt.AlignLeft)
+        grid.addWidget(self.lane_width, 1, 1)
         
         lane_layout.addLayout(grid)
         lane_layout.addStretch()
@@ -701,6 +884,11 @@ class BridgeGeometryTab(QWidget):
         
         try:
             overall_width = self.get_overall_bridge_width()
+            
+            # Update the display field if it exists
+            if hasattr(self, 'overall_width_display'):
+                self.overall_width_display.setText(f"{overall_width:.3f}")
+            
             spacing = float(self.girder_spacing.text()) if self.girder_spacing.text() else DEFAULT_GIRDER_SPACING
             overhang = float(self.deck_overhang.text()) if self.deck_overhang.text() else DEFAULT_DECK_OVERHANG
             
@@ -1409,48 +1597,68 @@ class AdditionalInputsWidget(QWidget):
         self.init_ui()
     
     def init_ui(self):
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet("background-color: white;")
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Title
+        # Header
+        header_widget = QWidget()
+        header_widget.setStyleSheet("background-color: white; border-bottom: 1px solid #d0d0d0;")
+        header_widget.setMinimumHeight(50)
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(20, 0, 20, 0)
+        
         title = QLabel("Additional Inputs")
-        title.setStyleSheet("font-size: 14px; font-weight: bold; padding: 5px;")
-        main_layout.addWidget(title)
+        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #333;")
+        header_layout.addWidget(title)
+        
+        main_layout.addWidget(header_widget)
         
         # Main tab widget
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
-                border: 1px solid #d1d1d1;
+                border: none;
+                background: #ffffff;
+                margin-top: -1px;
+            }
+            QTabBar {
                 background: #ffffff;
             }
             QTabBar::tab {
                 background: #e9e9e9;
                 color: #3a3a3a;
                 border: 1px solid #d1d1d1;
-                border-bottom-color: #d1d1d1;
+                border-bottom: none;
                 padding: 10px 22px;
                 margin-right: 4px;
                 border-top-left-radius: 10px;
                 border-top-right-radius: 10px;
+                font-weight: 500;
             }
             QTabBar::tab:selected {
                 background: #9ecb3d;
                 color: #ffffff;
-                border: 1px solid #7ea82d;
+                border: 1px solid #9ecb3d;
+                border-bottom: none;
             }
-            QTabBar::tab:hover {
+            QTabBar::tab:hover:!selected {
                 background: #f5f5f5;
+            }
+            QTabWidget {
+                background-color: white;
             }
         """)
         
-        # Sub-Tab 1: Bridge Geometry
+        # Sub-Tab 1: Typical Section Details
         self.bridge_geometry_tab = BridgeGeometryTab(self.footpath_value, self.carriageway_width)
-        self.tabs.addTab(self.bridge_geometry_tab, "Bridge Geometry")
+        self.tabs.addTab(self.bridge_geometry_tab, "Typical Section Details")
         
-        # Sub-Tab 2: Section Properties
+        # Sub-Tab 2: Member Properties
         self.section_properties_tab = SectionPropertiesTab()
-        self.tabs.addTab(self.section_properties_tab, "Section Properties")
+        self.tabs.addTab(self.section_properties_tab, "Member Properties")
         
         # Sub-Tab 3: Loading
         loading_tab = self.create_placeholder_tab(
@@ -1476,20 +1684,20 @@ class AdditionalInputsWidget(QWidget):
         )
         self.tabs.addTab(support_tab, "Support Conditions")
         
-        # Sub-Tab 5: Shear Connection
+        # Sub-Tab 5: Design Options
         shear_connection_tab = self.create_placeholder_tab(
-            "Shear Connection",
+            "Design Options",
             "This tab will contain:\n\n" +
             "• Shear Connector Type\n" +
             "• Connector Size and Spacing\n" +
             "• Connection Details\n\n" +
             "Implementation in progress..."
         )
-        self.tabs.addTab(shear_connection_tab, "Shear Connection")
+        self.tabs.addTab(shear_connection_tab, "Design Options")
         
-        # Sub-Tab 6: Analysis and Design Options
+        # Sub-Tab 6: Design Options (Cont.)
         analysis_design_tab = self.create_placeholder_tab(
-            "Analysis and Design Options",
+            "Design Options (Cont.)",
             "This tab will contain:\n\n" +
             "• Analysis Method\n" +
             "• Design Code Options\n" +
@@ -1497,18 +1705,9 @@ class AdditionalInputsWidget(QWidget):
             "• Other Design Parameters\n\n" +
             "Implementation in progress..."
         )
-        self.tabs.addTab(analysis_design_tab, "Analysis and Design Options")
+        self.tabs.addTab(analysis_design_tab, "Design Options (Cont.)")
         
         main_layout.addWidget(self.tabs)
-        
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.close)
-        close_btn.setMaximumWidth(100)
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-        btn_layout.addWidget(close_btn)
-        main_layout.addLayout(btn_layout)
     
     def create_placeholder_tab(self, title, description):
         """Create a styled placeholder tab with title and description"""
