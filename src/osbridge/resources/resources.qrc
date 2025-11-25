@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>vectors/arrow_down_light.svg</file>
+        <file>vectors/arrow_down_dark.svg</file>
+        <file>vectors/arrow_up_light.svg</file>
+        <file>vectors/arrow_up_dark.svg</file>
+        <file>themes/lightstyle.qss</file>
+        <file>vectors/design.svg</file>
+        <file>vectors/save.svg</file>
+        <file>vectors/design_report.svg</file>
+        <file>vectors/lock_open.svg</file>
+        <file>vectors/lock_close.svg</file>
+    </qresource>
+</RCC>

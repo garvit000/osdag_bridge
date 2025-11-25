@@ -7,122 +7,86 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QRegularExpression, QSize
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator, QIcon
 from PySide6.QtSvgWidgets import *
-from common import *
-from additional_inputs import AdditionalInputsWidget
+from osbridge.backend.common import *
+from osbridge.ui.additional_inputs import AdditionalInputsWidget
+from osbridge.ui.custom_buttons import DockCustomButton
 
 
 class NoScrollComboBox(QComboBox):
     def wheelEvent(self, event):
-        event.ignore()
-
+        event.ignore()  # Prevent changing selection on scroll
 
 def apply_field_style(widget):
     widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     widget.setMinimumHeight(28)
     
     if isinstance(widget, QComboBox):
-        # Get the paths to the down/up arrow SVGs
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        svg_down = os.path.join(current_dir, "dropdown_down.svg").replace("\\", "/")
-        svg_up = os.path.join(current_dir, "dropdown_up.svg").replace("\\", "/")
-        
-        style = f"""
-        QComboBox {{
-            padding: 4px 8px;
-            padding-right: 30px;
-            border: 1px solid #b0b0b0;
-            border-radius: 3px;
-            background-color: white;
-            color: black;
-            min-height: 24px;
-        }}
-        QComboBox::drop-down {{
-            subcontrol-origin: padding;
-            subcontrol-position: center right;
-            width: 22px;
-            height: 22px;
-            border: 1px solid #606060;
-            background-color: transparent;
-            border-radius: 11px;
-            right: 5px;
-        }}
-        QComboBox::down-arrow {{
-            image: url({svg_down});
-            width: 16px;
-            height: 16px;
-        }}
-        /* show up arrow when popup is open */
-        QComboBox::down-arrow:on {{
-            image: url({svg_up});
-            width: 16px;
-            height: 16px;
-        }}
-        QComboBox:hover {{
-            border: 1px solid #909090;
-        }}
-        QComboBox:focus {{
-            border: 1px solid #4a7ba7;
-        }}
-        QComboBox QAbstractItemView {{
-            background-color: white;
-            border: 1px solid #b0b0b0;
-            outline: none;
-            selection-background-color: #e8f4ff;
-        }}
-        QComboBox QAbstractItemView::item {{
-            color: black;
-            background-color: white;
-            padding: 5px;
-            min-height: 24px;
-        }}
-        QComboBox QAbstractItemView::item:hover {{
-            background-color: #e8f4ff;
-            color: black;
-        }}
+        style = """
+            QComboBox{
+                padding: 2px;
+                border: 1px solid black;
+                border-radius: 5px;
+                background-color: white;
+                color: black;
+            }
+            QComboBox::drop-down{
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                border-left: 0px;
+            }
+            QComboBox::down-arrow{
+                image: url(:/vectors/arrow_down_light.svg);
+                width: 20px;
+                height: 20px;
+                margin-right: 8px;
+            }
+            QComboBox::down-arrow:on {
+                image: url(:/vectors/arrow_up_light.svg);
+                width: 20px;
+                height: 20px;
+                margin-right: 8px;
+            }
+            QComboBox QAbstractItemView{
+                background-color: white;
+                border: 1px solid black;
+                outline: none;
+            }
+            QComboBox QAbstractItemView::item{
+                color: black;
+                background-color: white;
+                border: none;
+                border: 1px solid white;
+                border-radius: 0;
+                padding: 2px;
+            }
+            QComboBox QAbstractItemView::item:hover{
+                border: 1px solid #90AF13;
+                background-color: #90AF13;
+                color: black;
+            }
+            QComboBox QAbstractItemView::item:selected{
+                background-color: #90AF13;
+                color: black;
+                border: 1px solid #90AF13;
+            }
+            QComboBox QAbstractItemView::item:selected:hover{
+                background-color: #90AF13;
+                color: black;
+                border: 1px solid #94b816;
+            } 
         """
         widget.setStyleSheet(style)
     elif isinstance(widget, QLineEdit):
         widget.setStyleSheet("""
-        QLineEdit {
-            padding: 4px 8px;
-            border: 1px solid #b0b0b0;
-            border-radius: 3px;
-            background-color: white;
-            color: black;
-            min-height: 24px;
-        }
-        QLineEdit:hover {
-            border: 1px solid #909090;
-        }
-        QLineEdit:focus {
-            border: 1px solid #4a7ba7;
-        }
-        QLineEdit:disabled {
-            background-color: #f5f5f5;
-            color: #999;
-        }
+            QLineEdit {
+                padding: 1px 7px;
+                border: 1px solid #070707;
+                border-radius: 6px;
+                background-color: white;
+                color: #000000;
+                font-weight: normal;
+            }
         """)
-
-
-def style_main_buttons():
-    return """
-        QPushButton {
-            background-color: #90AF13;
-            color: white;
-            font-weight: bold;
-            border: 1px solid #7a9611;
-            border-radius: 3px;
-            padding: 6px 16px;
-            min-height: 28px;
-        }
-        QPushButton:hover {
-            background-color: #7a9a12;
-        }
-        QPushButton:pressed {
-            background-color: #6a8a10;
-        }
-    """
-
 
 def create_group_box(title):
     """Create a styled group box"""
@@ -130,19 +94,21 @@ def create_group_box(title):
     group_box.setStyleSheet("""
         QGroupBox {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 12px;
             color: #333;
-            border: 1px solid #d0d0d0;
-            border-radius: 5px;
-            margin-top: 10px;
-            padding-top: 10px;
-            background-color: #fafafa;
+            border: 1px solid #90AF13;
+            border-radius: 4px;
+            margin-top: 0.8em;
+            padding: 10px;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top left;
-            padding: 0 5px;
+            left: 8px;
+            padding: 0 4px;
+            margin-top: 4px;
             background-color: white;
+            color: #333;
         }
     """)
     return group_box
@@ -154,7 +120,13 @@ def create_form_row(label_text, widget, tooltip=None):
     row.setSpacing(10)
     
     label = QLabel(label_text)
-    label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+    label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
     label.setMinimumWidth(140)
     label.setMaximumWidth(140)
     
@@ -201,19 +173,21 @@ class InputDock(QWidget):
         toggle_layout.setSpacing(0)
         toggle_layout.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
 
-        self.toggle_btn = QPushButton("<")
+        self.toggle_btn = QPushButton("❮")
+        self.toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.toggle_btn.setFixedSize(6, 60)
         self.toggle_btn.setToolTip("Hide panel")
         self.toggle_btn.setStyleSheet("""
             QPushButton {
-                background-color: #7a9a12;
+                background-color: #6c8408;
                 color: white;
                 font-size: 12px;
                 font-weight: bold;
+                padding: 0px;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #6a8a10;
+                background-color: #5e7407;
             }
         """)
         toggle_layout.addStretch()
@@ -244,7 +218,7 @@ class InputDock(QWidget):
             custom_location, ok = QInputDialog.getText(
                 self,
                 "Custom Location",
-                "Enter city name for load calculations:",
+                "Enter city name for load calculations",
                 QLineEdit.Normal,
                 ""
             )
@@ -337,7 +311,7 @@ class InputDock(QWidget):
         
         coords_row.addStretch()
         
-        lat_label = QLabel("Latitude (°):")
+        lat_label = QLabel("Latitude (°)")
         lat_label.setStyleSheet("font-size: 11px;")
         coords_row.addWidget(lat_label)
         
@@ -347,7 +321,7 @@ class InputDock(QWidget):
         apply_field_style(self.latitude_input)
         coords_row.addWidget(self.latitude_input)
         
-        lng_label = QLabel("Longitude (°):")
+        lng_label = QLabel("Longitude (°)")
         lng_label.setStyleSheet("font-size: 11px;")
         coords_row.addWidget(lng_label)
         
@@ -486,7 +460,7 @@ class InputDock(QWidget):
         results_section = QVBoxLayout()
         results_section.setSpacing(8)
         
-        results_title = QLabel("IRC 6 (2017) Values:")
+        results_title = QLabel("IRC 6 (2017) Values")
         results_title.setStyleSheet("font-size: 12px; font-weight: bold; color: #4CAF50;")
         results_section.addWidget(results_title)
         
@@ -543,12 +517,26 @@ class InputDock(QWidget):
         btn_layout.addStretch()
         
         ok_btn = QPushButton("OK")
-        ok_btn.setStyleSheet(style_main_buttons())
+        ok_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        ok_btn.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                color: #333;
+                border: 1px solid #c0c0c0;
+                border-radius: 3px;
+                padding: 6px 16px;
+                min-height: 28px;
+            }
+            QPushButton:hover {
+                background-color: #f5f5f5;
+            }
+        """)
         ok_btn.setMinimumWidth(100)
         ok_btn.clicked.connect(dialog.accept)
         btn_layout.addWidget(ok_btn)
         
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         cancel_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
@@ -627,43 +615,68 @@ class InputDock(QWidget):
         top_bar.setContentsMargins(0, 0, 0, 15)
         
         input_dock_btn = QPushButton("Basic Inputs")
-        input_dock_btn.setStyleSheet(style_main_buttons())
+        input_dock_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                font-size: 13px;
+                border: none;
+                border-radius: 4px;
+                padding: 7px 20px;
+                min-width: 80px;
+            }
+        """)
         input_dock_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         top_bar.addWidget(input_dock_btn)
         
-        # Get lock icon path
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        lock_icon_path = os.path.join(current_dir, "lock.svg")
-        
         # Additional Inputs button with lock icon on the right
         additional_inputs_btn = QPushButton("Additional Inputs")
-        
-        # Try to load the icon
-        if os.path.exists(lock_icon_path):
-            lock_icon = QIcon(lock_icon_path)
-            additional_inputs_btn.setIcon(lock_icon)
-            additional_inputs_btn.setIconSize(QSize(14, 14))
-            additional_inputs_btn.setLayoutDirection(Qt.RightToLeft)  # This puts icon on the right
-        
+        additional_inputs_btn.setCursor(Qt.CursorShape.PointingHandCursor)        
         additional_inputs_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
-                color: #333;
-                font-weight: normal;
-                border: 1px solid #b0b0b0;
-                border-radius: 3px;
-                padding: 6px 16px;
-                min-height: 28px;
-                text-align: left;
+                color: black;
+                font-weight: bold;
+                font-size: 13px;
+                border-radius: 5px;
+                border: 1px solid black;
+                padding: 7px 20px;
+                text-align: center;
             }
             QPushButton:hover {
-                background-color: #f5f5f5;
-                border: 1px solid #909090;
+                background-color: #90AF13;
+                border: 1px solid #90AF13;
+                color: white;
+            }
+            QPushButton:pressed {
+                color: black;
+                background-color: white;
+                border: 1px solid black;
             }
         """)
         additional_inputs_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         additional_inputs_btn.clicked.connect(self.show_additional_inputs)
-        top_bar.addWidget(additional_inputs_btn)
+        top_bar.addWidget(additional_inputs_btn)           
+
+        # Load the icon from resources
+        lock_button = QPushButton()
+        lock_button.setCursor(Qt.CursorShape.PointingHandCursor) 
+        lock_state = [1]  # Use list to make it mutable
+        lock_button.setIcon(QIcon(":/vectors/lock_close.svg"))
+        lock_button.setIconSize(QSize(30, 30))
+        lock_button.setStyleSheet("border: none;")
+        top_bar.addWidget(lock_button)
+
+        def toggle_lock():
+            if lock_state[0] == 0:
+                lock_state[0] = 1
+                lock_button.setIcon(QIcon(":/vectors/lock_close.svg"))
+            elif lock_state[0] == 1:
+                lock_state[0] = 0
+                lock_button.setIcon(QIcon(":/vectors/lock_open.svg"))
+                
+        lock_button.clicked.connect(toggle_lock)
         
         panel_layout.addLayout(top_bar)
 
@@ -675,25 +688,42 @@ class InputDock(QWidget):
         scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         scroll_area.setStyleSheet("""
             QScrollArea {
+                background: transparent;
+                padding: 0px 5px;
+                border-top: 1px solid #909090;
+                border-bottom: 1px solid #909090;
+            }
+
+            QScrollArea QScrollBar:vertical {
                 border: none;
-                background-color: transparent;
-            }
-            QScrollBar:vertical {
                 background: #f0f0f0;
-                width: 10px;
-                margin: 0px;
-                border-radius: 0px;
+                width: 8px;
+                margin-left: 2px;
             }
-            QScrollBar::handle:vertical {
+
+            QScrollArea QScrollBar::handle:vertical {
                 background: #c0c0c0;
-                min-height: 30px;
-                border-radius: 0px;
+                border-radius: 4px;
+                min-height: 20px;
             }
-            QScrollBar::handle:vertical:hover {
+
+            QScrollArea QScrollBar::handle:vertical:hover {
                 background: #a0a0a0;
             }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
+
+            QScrollArea QScrollBar::handle:vertical:pressed {
+                background: #808080;
+            }
+
+            QScrollArea QScrollBar::add-line:vertical,
+            QScrollArea QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+
+            QScrollArea QScrollBar::add-page:vertical,
+            QScrollArea QScrollBar::sub-page:vertical {
+                background: none;
             }
         """)
 
@@ -702,12 +732,130 @@ class InputDock(QWidget):
         group_container_layout = QVBoxLayout(group_container)
         group_container_layout.setContentsMargins(0, 0, 0, 0)
         group_container_layout.setSpacing(12)
+
+        # === Type of Structure Box ===
+        type_box = QGroupBox("Type of Structure")
+        type_box.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #90AF13;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+                margin-top: 12px;
+                font-size: 10px;
+                font-weight: bold;
+                color: #333;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 8px;
+                padding: 0 4px;
+                margin-top: 4px;
+                background-color: white;
+                color: #333;
+            }
+        """)
+        type_box_layout = QVBoxLayout(type_box)
+        type_box_layout.setContentsMargins(8, 8, 8, 8)
+        type_box_layout.setSpacing(8)
+        
+        # Type of Structure field
+        type_row = QHBoxLayout()
+        type_field_label = QLabel("Type of Structure")
+        type_field_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        type_field_label.setMinimumWidth(110)
+        
+        self.structure_type_combo = NoScrollComboBox()
+        self.structure_type_combo.setObjectName(KEY_STRUCTURE_TYPE)
+        apply_field_style(self.structure_type_combo)
+        self.structure_type_combo.addItems(VALUES_STRUCTURE_TYPE)
+        
+        type_row.addWidget(type_field_label)
+        type_row.addWidget(self.structure_type_combo, 1)
+        type_box_layout.addLayout(type_row)
+
+        self.structure_note = QLabel("*Other structures not included")
+        self.structure_note.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        self.structure_note.setVisible(False)
+        type_box_layout.addWidget(self.structure_note)
+
+        self.structure_type_combo.currentTextChanged.connect(self.on_structure_type_changed)
+        group_container_layout.addWidget(type_box)
+        
+        # === Project Location Box ===
+        location_box = QGroupBox()
+        location_box.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #90AF13;
+                border-radius: 4px;
+                background-color: white;
+                padding: 8px;
+                margin-top: 12px;
+            }
+        """)
+        location_box_layout = QVBoxLayout(location_box)
+        location_box_layout.setContentsMargins(8, 8, 8, 8)
+        location_box_layout.setSpacing(8)
+
+        loc_header = QHBoxLayout()
+        loc_title = QLabel("Project Location")
+        loc_title.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        loc_title.setMinimumWidth(110)
+        loc_header.addWidget(loc_title)
+        
+        add_here_btn = QPushButton("Add Here")
+        add_here_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        add_here_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
+                font-weight: bold;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 20px;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #7a9a12;
+            }
+        """)
+        add_here_btn.clicked.connect(self.show_project_location_dialog)
+        loc_header.addWidget(add_here_btn, 1)
+        location_box_layout.addLayout(loc_header)
+        
+        self.project_location_combo = NoScrollComboBox()
+        self.project_location_combo.setObjectName(KEY_PROJECT_LOCATION)
+        self.project_location_combo.addItems(VALUES_PROJECT_LOCATION)
+        self.project_location_combo.currentTextChanged.connect(self.on_project_location_changed)
+        self.project_location_combo.hide()
+        
+        group_container_layout.addWidget(location_box)
         
         # === Superstructure Section (Contains Everything) ===
         structure_group = QGroupBox()
         structure_group.setStyleSheet("""
             QGroupBox {
-                border: 2px solid #90AF13;
+                border: 1px solid #90AF13;
                 border-radius: 5px;
                 margin-top: 0px;
                 padding-top: 5px;
@@ -721,21 +869,17 @@ class InputDock(QWidget):
         # Header with title and collapse icon
         struct_header = QHBoxLayout()
         struct_title = QLabel("Superstructure")
-        struct_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        struct_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #333;")
         struct_header.addWidget(struct_title)
         struct_header.addStretch()
         
-        # Get the path to dropdown SVG
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        svg_down = os.path.join(base_dir, "dropdown_down.svg").replace("\\", "/")
-        svg_up = os.path.join(base_dir, "dropdown_up.svg").replace("\\", "/")
-        
         # Collapse/expand toggle using SVG icon
         toggle_btn = QPushButton()
+        toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         toggle_btn.setCheckable(True)
         toggle_btn.setChecked(True)
-        toggle_btn.setIcon(QIcon(svg_up))
-        toggle_btn.setIconSize(QSize(16, 16))
+        toggle_btn.setIcon(QIcon(":/vectors/arrow_up_light.svg"))
+        toggle_btn.setIconSize(QSize(20, 20))
         toggle_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
@@ -765,107 +909,9 @@ class InputDock(QWidget):
         def _toggle_structure(checked):
             # checked True means show body (open)
             structure_body.setVisible(checked)
-            toggle_btn.setIcon(QIcon(svg_up if checked else svg_down))
+            toggle_btn.setIcon(QIcon(":/vectors/arrow_up_light.svg" if checked else ":/vectors/arrow_down_light.svg"))
 
         toggle_btn.toggled.connect(_toggle_structure)
-        
-        # === Type of Structure Box ===
-        type_box = QGroupBox("Type of Structure")
-        type_box.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #90AF13;
-                border-radius: 4px;
-                background-color: white;
-                padding: 8px;
-                margin-top: 12px;
-                font-size: 10px;
-                font-weight: bold;
-                color: #333;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 8px;
-                padding: 0 4px;
-                background-color: white;
-                color: #333;
-            }
-        """)
-        type_box_layout = QVBoxLayout(type_box)
-        type_box_layout.setContentsMargins(8, 8, 8, 8)
-        type_box_layout.setSpacing(8)
-        
-        # Type of Structure field
-        type_row = QHBoxLayout()
-        type_field_label = QLabel("Type of Structure")
-        type_field_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        type_field_label.setMinimumWidth(110)
-        
-        self.structure_type_combo = NoScrollComboBox()
-        self.structure_type_combo.setObjectName(KEY_STRUCTURE_TYPE)
-        apply_field_style(self.structure_type_combo)
-        self.structure_type_combo.addItems(VALUES_STRUCTURE_TYPE)
-        
-        type_row.addWidget(type_field_label)
-        type_row.addWidget(self.structure_type_combo, 1)
-        type_box_layout.addLayout(type_row)
-
-        self.structure_note = QLabel("*Other structures not included")
-        self.structure_note.setStyleSheet("font-size: 9px; color: #d32f2f; font-style: italic;")
-        self.structure_note.setVisible(False)
-        type_box_layout.addWidget(self.structure_note)
-
-        self.structure_type_combo.currentTextChanged.connect(self.on_structure_type_changed)
-        structure_body_layout.addWidget(type_box)
-        
-        # === Project Location Box ===
-        location_box = QGroupBox()
-        location_box.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #90AF13;
-                border-radius: 4px;
-                background-color: white;
-                padding: 8px;
-                margin-top: 12px;
-            }
-        """)
-        location_box_layout = QVBoxLayout(location_box)
-        location_box_layout.setContentsMargins(8, 8, 8, 8)
-        location_box_layout.setSpacing(8)
-
-        loc_header = QHBoxLayout()
-        loc_title = QLabel("Project Location:")
-        loc_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
-        loc_header.addWidget(loc_title)
-        loc_header.addStretch()
-        
-        add_here_btn = QPushButton("Add Here")
-        add_here_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #90AF13;
-                color: white;
-                font-weight: bold;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 20px;
-                font-size: 11px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #7a9a12;
-            }
-        """)
-        add_here_btn.clicked.connect(self.show_project_location_dialog)
-        loc_header.addWidget(add_here_btn)
-        location_box_layout.addLayout(loc_header)
-        
-        self.project_location_combo = NoScrollComboBox()
-        self.project_location_combo.setObjectName(KEY_PROJECT_LOCATION)
-        self.project_location_combo.addItems(VALUES_PROJECT_LOCATION)
-        self.project_location_combo.currentTextChanged.connect(self.on_project_location_changed)
-        self.project_location_combo.hide()
-        
-        structure_body_layout.addWidget(location_box)
         
         # === Geometric Details Box ===
         geo_box = QGroupBox("Geometric Details")
@@ -885,6 +931,7 @@ class InputDock(QWidget):
                 subcontrol-position: top left;
                 left: 8px;
                 padding: 0 4px;
+                margin-top: 4px;
                 background-color: white;
                 color: #333;
             }
@@ -895,8 +942,14 @@ class InputDock(QWidget):
         
         # Span
         span_row = QHBoxLayout()
-        span_label = QLabel("Span (m):")
-        span_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+        span_label = QLabel("Span (m)")
+        span_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
         span_label.setMinimumWidth(110)
         self.span_input = QLineEdit()
         self.span_input.setObjectName(KEY_SPAN)
@@ -909,8 +962,14 @@ class InputDock(QWidget):
         
         # Carriageway Width
         carriageway_row = QHBoxLayout()
-        carriageway_label = QLabel("Carriageway (m):")
-        carriageway_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+        carriageway_label = QLabel("Carriageway (m)")
+        carriageway_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
         carriageway_label.setMinimumWidth(110)
         self.carriageway_input = QLineEdit()
         self.carriageway_input.setObjectName(KEY_CARRIAGEWAY_WIDTH)
@@ -923,8 +982,14 @@ class InputDock(QWidget):
         
         # Footpath
         footpath_row = QHBoxLayout()
-        footpath_label = QLabel("Footpath:")
-        footpath_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+        footpath_label = QLabel("Footpath")
+        footpath_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
         footpath_label.setMinimumWidth(110)
         self.footpath_combo = NoScrollComboBox()
         self.footpath_combo.setObjectName(KEY_FOOTPATH)
@@ -938,8 +1003,14 @@ class InputDock(QWidget):
         
         # Skew Angle
         skew_row = QHBoxLayout()
-        skew_label = QLabel("Skew Angle:")
-        skew_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
+        skew_label = QLabel("Skew Angle")
+        skew_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
         skew_label.setMinimumWidth(110)
         self.skew_input = QLineEdit()
         self.skew_input.setObjectName(KEY_SKEW_ANGLE)
@@ -953,12 +1024,19 @@ class InputDock(QWidget):
         
         # Additional Geometry (inside Geometric Details)
         add_geo_row = QHBoxLayout()
-        add_geo_label = QLabel("Additional Geometry:")
-        add_geo_label.setStyleSheet("font-size: 10px; color: #555; font-weight: bold;")
+        add_geo_label = QLabel("Additional Geometry")
+        add_geo_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
         add_geo_label.setMinimumWidth(110)
         add_geo_row.addWidget(add_geo_label)
         
         modify_geo_btn = QPushButton("Modify Here")
+        modify_geo_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         modify_geo_btn.setStyleSheet("""
             QPushButton {
                 background-color: #90AF13;
@@ -998,6 +1076,7 @@ class InputDock(QWidget):
                 subcontrol-position: top left;
                 left: 8px;
                 padding: 0 4px;
+                margin-top: 4px;
                 background-color: white;
                 color: #333;
             }
@@ -1006,14 +1085,79 @@ class InputDock(QWidget):
         material_box_layout.setContentsMargins(8, 8, 8, 8)
         material_box_layout.setSpacing(8)
         
+        # Girder
+        girder_row = QHBoxLayout()
+        girder_label = QLabel("Girder")
+        girder_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        girder_label.setMinimumWidth(110)
+        self.girder_combo = NoScrollComboBox()
+        self.girder_combo.setObjectName(KEY_GIRDER)
+        apply_field_style(self.girder_combo)
+        self.girder_combo.addItems(VALUES_MATERIAL)
+        girder_row.addWidget(girder_label)
+        girder_row.addWidget(self.girder_combo, 1)
+        material_box_layout.addLayout(girder_row)
+        
+        # Cross Bracing
+        cross_bracing_row = QHBoxLayout()
+        cross_bracing_label = QLabel("Cross Bracing")
+        cross_bracing_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        cross_bracing_label.setMinimumWidth(110)
+        self.cross_bracing_combo = NoScrollComboBox()
+        self.cross_bracing_combo.setObjectName(KEY_CROSS_BRACING)
+        apply_field_style(self.cross_bracing_combo)
+        self.cross_bracing_combo.addItems(VALUES_MATERIAL)
+        cross_bracing_row.addWidget(cross_bracing_label)
+        cross_bracing_row.addWidget(self.cross_bracing_combo, 1)
+        material_box_layout.addLayout(cross_bracing_row)
+        
+        # Deck
+        deck_row = QHBoxLayout()
+        deck_label = QLabel("Deck")
+        deck_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        deck_label.setMinimumWidth(110)
+        self.deck_combo = NoScrollComboBox()
+        self.deck_combo.setObjectName(KEY_DECK_CONCRETE_GRADE_BASIC)
+        apply_field_style(self.deck_combo)
+        self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
+        self.deck_combo.setCurrentText("M25")
+        deck_row.addWidget(deck_label)
+        deck_row.addWidget(self.deck_combo, 1)
+        material_box_layout.addLayout(deck_row)
+
         # Material Properties header with button
         mat_prop_header = QHBoxLayout()
-        mat_prop_title = QLabel("Material Properties:")
-        mat_prop_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
+        mat_prop_title = QLabel("Modify Properties")
+        mat_prop_title.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        mat_prop_title.setMinimumWidth(110)
         mat_prop_header.addWidget(mat_prop_title)
-        mat_prop_header.addStretch()
         
         modify_mat_btn = QPushButton("Modify Here")
+        modify_mat_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         modify_mat_btn.setStyleSheet("""
             QPushButton {
                 background-color: #90AF13;
@@ -1029,48 +1173,8 @@ class InputDock(QWidget):
                 background-color: #7a9a12;
             }
         """)
-        mat_prop_header.addWidget(modify_mat_btn)
+        mat_prop_header.addWidget(modify_mat_btn, 1)
         material_box_layout.addLayout(mat_prop_header)
-        
-        # Girder
-        girder_row = QHBoxLayout()
-        girder_label = QLabel("Girder:")
-        girder_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        girder_label.setMinimumWidth(110)
-        self.girder_combo = NoScrollComboBox()
-        self.girder_combo.setObjectName(KEY_GIRDER)
-        apply_field_style(self.girder_combo)
-        self.girder_combo.addItems(VALUES_MATERIAL)
-        girder_row.addWidget(girder_label)
-        girder_row.addWidget(self.girder_combo, 1)
-        material_box_layout.addLayout(girder_row)
-        
-        # Cross Bracing
-        cross_bracing_row = QHBoxLayout()
-        cross_bracing_label = QLabel("Cross Bracing:")
-        cross_bracing_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        cross_bracing_label.setMinimumWidth(110)
-        self.cross_bracing_combo = NoScrollComboBox()
-        self.cross_bracing_combo.setObjectName(KEY_CROSS_BRACING)
-        apply_field_style(self.cross_bracing_combo)
-        self.cross_bracing_combo.addItems(VALUES_MATERIAL)
-        cross_bracing_row.addWidget(cross_bracing_label)
-        cross_bracing_row.addWidget(self.cross_bracing_combo, 1)
-        material_box_layout.addLayout(cross_bracing_row)
-        
-        # Deck
-        deck_row = QHBoxLayout()
-        deck_label = QLabel("Deck:")
-        deck_label.setStyleSheet("font-size: 10px; color: #555; font-weight: normal;")
-        deck_label.setMinimumWidth(110)
-        self.deck_combo = NoScrollComboBox()
-        self.deck_combo.setObjectName(KEY_DECK_CONCRETE_GRADE_BASIC)
-        apply_field_style(self.deck_combo)
-        self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
-        self.deck_combo.setCurrentText("M25")
-        deck_row.addWidget(deck_label)
-        deck_row.addWidget(self.deck_combo, 1)
-        material_box_layout.addLayout(deck_row)
         
         structure_body_layout.addWidget(material_box)
         
@@ -1082,7 +1186,7 @@ class InputDock(QWidget):
         sub_group = QGroupBox()
         sub_group.setStyleSheet("""
             QGroupBox {
-                border: 2px solid #90AF13;
+                border: 1px solid #90AF13;
                 border-radius: 5px;
                 margin-top: 8px;
                 padding-top: 5px;
@@ -1096,15 +1200,16 @@ class InputDock(QWidget):
         # Header with toggle
         sub_header = QHBoxLayout()
         sub_title = QLabel("Substructure")
-        sub_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
+        sub_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #333;")
         sub_header.addWidget(sub_title)
         sub_header.addStretch()
 
         sub_toggle = QPushButton()
+        sub_toggle.setCursor(Qt.CursorShape.PointingHandCursor)
         sub_toggle.setCheckable(True)
         sub_toggle.setChecked(True)
-        sub_toggle.setIcon(QIcon(svg_up))
-        sub_toggle.setIconSize(QSize(16, 16))
+        sub_toggle.setIcon(QIcon(":/vectors/arrow_up_light.svg"))
+        sub_toggle.setIconSize(QSize(20, 20))
         sub_toggle.setStyleSheet("""
             QPushButton {
                 background: transparent;
@@ -1131,7 +1236,7 @@ class InputDock(QWidget):
 
         def _toggle_sub(checked):
             sub_body.setVisible(checked)
-            sub_toggle.setIcon(QIcon(svg_up if checked else svg_down))
+            sub_toggle.setIcon(QIcon(":/vectors/arrow_up_light.svg" if checked else ":/vectors/arrow_down_light.svg"))
 
         sub_toggle.toggled.connect(_toggle_sub)
 
@@ -1149,13 +1254,11 @@ class InputDock(QWidget):
         btn_button_layout.setContentsMargins(0, 15, 0, 0)
         btn_button_layout.setSpacing(10)
 
-        save_input_btn = QPushButton("Save Input")
-        save_input_btn.setStyleSheet(style_main_buttons())
+        save_input_btn = DockCustomButton("Save Input", ":/vectors/save.svg")
         save_input_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         btn_button_layout.addWidget(save_input_btn)
 
-        design_btn = QPushButton("Design")
-        design_btn.setStyleSheet(style_main_buttons())
+        design_btn = DockCustomButton("Design", ":/vectors/design.svg")
         design_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         btn_button_layout.addWidget(design_btn)
 
@@ -1168,18 +1271,28 @@ class InputDock(QWidget):
         h_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         h_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         h_scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background-color: transparent;
+            QScrollArea{
+                background: transparent;
             }
-            QScrollBar:horizontal {
-                background: #f0f0f0;
-                height: 10px;
-                margin: 0px;
+            QScrollBar:horizontal{
+                background: #E0E0E0;
+                height: 8px;
+                margin: 3px 0px 0px 0px;
+                border-radius: 2px;
             }
-            QScrollBar::handle:horizontal {
-                background: #c0c0c0;
+            QScrollBar::handle:horizontal{
+                background: #A0A0A0;
                 min-width: 30px;
+                border-radius: 2px;
+            }
+            QScrollBar::handle:horizontal:hover{
+                background: #707070;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal{
+                width: 0px;
+            }
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal{
+                background: none;
             }
         """)
         h_scroll_area.setWidget(self.left_panel)
