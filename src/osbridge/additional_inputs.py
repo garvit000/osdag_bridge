@@ -44,8 +44,9 @@ def get_combobox_style():
             subcontrol-position: center right;
             width: 26px;
             height: 26px;
-            border: 1px solid #606060;
-            border-radius: 13px;
+            width: 26px;
+            height: 26px;
+            border: none;
             background: transparent;
             right: 8px;
         }}
@@ -1122,7 +1123,6 @@ class GirderDetailsTab(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.plate_rows = []
         self.init_ui()
     
     def init_ui(self):
@@ -1145,116 +1145,348 @@ class GirderDetailsTab(QWidget):
         scroll.setWidget(container)
 
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
+        container_layout.setContentsMargins(10, 10, 10, 10)
+        container_layout.setSpacing(10)
 
-        form_frame = QFrame()
-        form_frame.setStyleSheet("QFrame { background: transparent; }")
-        self.form_layout = QGridLayout(form_frame)
-        self.form_layout.setContentsMargins(0, 0, 0, 0)
-        self.form_layout.setHorizontalSpacing(28)
-        self.form_layout.setVerticalSpacing(20)
-        self.form_layout.setColumnMinimumWidth(0, 220)
-        self.form_layout.setColumnStretch(1, 1)
-        container_layout.addWidget(form_frame)
-        container_layout.addStretch()
+        # Common label style
+        label_style = "QLabel { color: #333333; font-size: 11px; background-color: transparent; }"
+        title_style = "QLabel { color: #333333; font-weight: bold; font-size: 12px; margin-bottom: 10px; background-color: transparent; }"
+
+        # --- Top Section ---
+        top_group = QGroupBox()
+        top_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
+            }
+        """)
+        top_layout = QGridLayout(top_group)
+        top_layout.setContentsMargins(15, 15, 15, 15)
+        top_layout.setHorizontalSpacing(20)
+        top_layout.setVerticalSpacing(15)
+
+        # Row 0
+        lbl_girder = QLabel("Select Girder:")
+        lbl_girder.setStyleSheet(label_style)
+        top_layout.addWidget(lbl_girder, 0, 0)
+        
+        self.select_girder = QComboBox()
+        self.select_girder.addItems(["Girder 1", "Girder 2", "Girder 3"]) # Placeholder items
+        apply_field_style(self.select_girder)
+        top_layout.addWidget(self.select_girder, 0, 1)
+        
+        # Spacer
+        top_layout.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum), 0, 2)
+
+        # Row 1
+        lbl_span = QLabel("Span:")
+        lbl_span.setStyleSheet(label_style)
+        top_layout.addWidget(lbl_span, 1, 0)
+        
+        self.span_combo = QComboBox()
+        self.span_combo.addItems(["Custom", "Span 1", "Span 2"])
+        apply_field_style(self.span_combo)
+        top_layout.addWidget(self.span_combo, 1, 1)
+
+        lbl_member_id = QLabel("Member ID:")
+        lbl_member_id.setStyleSheet(label_style)
+        top_layout.addWidget(lbl_member_id, 1, 3)
+        
+        self.member_id = QLineEdit("G1-1")
+        apply_field_style(self.member_id)
+        top_layout.addWidget(self.member_id, 1, 4)
+
+        # Row 2
+        lbl_dist = QLabel("Distance from left edge (m):")
+        lbl_dist.setStyleSheet(label_style)
+        top_layout.addWidget(lbl_dist, 2, 0)
+        
+        dist_layout = QHBoxLayout()
+        dist_layout.setSpacing(10)
+        
+        dist_start_layout = QVBoxLayout()
+        self.dist_start = QLineEdit()
+        apply_field_style(self.dist_start)
+        self.dist_start.setFixedWidth(80)
+        dist_start_layout.addWidget(self.dist_start)
+        
+        dist_start_label = QLabel("Start")
+        dist_start_label.setAlignment(Qt.AlignCenter)
+        dist_start_label.setStyleSheet("font-size: 10px; color: #555555;")
+        dist_start_layout.addWidget(dist_start_label)
+        dist_layout.addLayout(dist_start_layout)
+
+        dist_end_layout = QVBoxLayout()
+        self.dist_end = QLineEdit()
+        apply_field_style(self.dist_end)
+        self.dist_end.setFixedWidth(80)
+        dist_end_layout.addWidget(self.dist_end)
+        
+        dist_end_label = QLabel("End")
+        dist_end_label.setAlignment(Qt.AlignCenter)
+        dist_end_label.setStyleSheet("font-size: 10px; color: #555555;")
+        dist_end_layout.addWidget(dist_end_label)
+        dist_layout.addLayout(dist_end_layout)
+        
+        top_layout.addLayout(dist_layout, 2, 1)
+
+        lbl_length = QLabel("Length (m):")
+        lbl_length.setStyleSheet(label_style)
+        top_layout.addWidget(lbl_length, 2, 3)
+        
+        self.length_input = QLineEdit()
+        apply_field_style(self.length_input)
+        top_layout.addWidget(self.length_input, 2, 4)
+
+        container_layout.addWidget(top_group)
+
+        # --- Main Content (Left/Right) ---
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(10)
+
+        # Left Column
+        left_column = QVBoxLayout()
+        left_column.setSpacing(10)
+
+        # Section Inputs Group
+        inputs_group = QGroupBox()
+        inputs_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
+                padding-top: 10px;
+            }
+        """)
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.setContentsMargins(15, 15, 15, 15)
+        
+        inputs_title = QLabel("Section Inputs:")
+        inputs_title.setStyleSheet(title_style)
+        inputs_layout.addWidget(inputs_title)
+
+        inputs_grid = QGridLayout()
+        inputs_grid.setHorizontalSpacing(15)
+        inputs_grid.setVerticalSpacing(15)
+        inputs_grid.setColumnStretch(1, 1)
 
         row = 0
-        self.girder_type_label = self.create_label("Girder Type:")
-        self.girder_type_combo = QComboBox()
-        self.girder_type_combo.addItems(VALUES_GIRDER_TYPE)
-        apply_field_style(self.girder_type_combo)
-        self.form_layout.addWidget(self.girder_type_label, row, 0, Qt.AlignVCenter)
-        self.form_layout.addWidget(self.girder_type_combo, row, 1)
+        lbl_design = QLabel("Design:")
+        lbl_design.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_design, row, 0)
+        
+        self.design_combo = QComboBox()
+        self.design_combo.addItems(["Customized", "Standard"])
+        apply_field_style(self.design_combo)
+        inputs_grid.addWidget(self.design_combo, row, 1)
         row += 1
 
-        self.is_section_label = self.create_label("Select IS Beam Section:")
-        self.is_beam_combo = QComboBox()
-        self.is_beam_combo.addItems([
-            "Select Section",
-            "ISMB 100", "ISMB 125", "ISMB 150", "ISMB 175", "ISMB 200",
-            "ISMB 225", "ISMB 250", "ISMB 300", "ISMB 350", "ISMB 400",
-            "ISMB 450", "ISMB 500", "ISMB 550", "ISMB 600",
-            "ISWB 150", "ISWB 175", "ISWB 200", "ISWB 225", "ISWB 250",
-            "ISWB 300", "ISWB 350", "ISWB 400", "ISWB 450", "ISWB 500", "ISWB 550", "ISWB 600"
-        ])
-        apply_field_style(self.is_beam_combo)
-        self.form_layout.addWidget(self.is_section_label, row, 0, Qt.AlignVCenter)
-        self.form_layout.addWidget(self.is_beam_combo, row, 1)
+        lbl_type = QLabel("Type:")
+        lbl_type.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_type, row, 0)
+        
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["Welded", "Rolled"])
+        apply_field_style(self.type_combo)
+        inputs_grid.addWidget(self.type_combo, row, 1)
         row += 1
 
+        lbl_symmetry = QLabel("Symmetry:")
+        lbl_symmetry.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_symmetry, row, 0)
+        
         self.symmetry_combo = QComboBox()
-        self.symmetry_combo.addItems(VALUES_GIRDER_SYMMETRY)
+        self.symmetry_combo.addItems(["Girder Symmetric", "Asymmetric"])
         apply_field_style(self.symmetry_combo)
-        row = self.add_plate_row(row, "Girder Symmetry", self.symmetry_combo)
+        inputs_grid.addWidget(self.symmetry_combo, row, 1)
+        row += 1
 
-        self.top_width_field = OptimizableField("Top Flange Width")
-        self.prepare_optimizable_field(self.top_width_field)
-        row = self.add_plate_row(row, "Top Flange Width (mm):", self.top_width_field)
+        lbl_depth = QLabel("Total Depth (mm):")
+        lbl_depth.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_depth, row, 0)
+        
+        self.total_depth = QLineEdit()
+        apply_field_style(self.total_depth)
+        inputs_grid.addWidget(self.total_depth, row, 1)
+        row += 1
 
-        self.top_thick_field = OptimizableField("Top Flange Thickness")
-        self.prepare_optimizable_field(self.top_thick_field)
-        row = self.add_plate_row(row, "Top Flange Thickness (mm):", self.top_thick_field)
+        lbl_web_thick = QLabel("Web Thickness (mm):")
+        lbl_web_thick.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_web_thick, row, 0)
+        
+        self.web_thickness = QComboBox()
+        self.web_thickness.addItems(["All", "Custom"])
+        apply_field_style(self.web_thickness)
+        inputs_grid.addWidget(self.web_thickness, row, 1)
+        row += 1
 
-        self.bottom_width_field = OptimizableField("Bottom Flange Width")
-        self.prepare_optimizable_field(self.bottom_width_field)
-        row = self.add_plate_row(row, "Bottom Flange Width (mm):", self.bottom_width_field)
+        lbl_top_width = QLabel("Width of Top Flange (mm):")
+        lbl_top_width.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_top_width, row, 0)
+        
+        self.top_flange_width = QLineEdit()
+        apply_field_style(self.top_flange_width)
+        inputs_grid.addWidget(self.top_flange_width, row, 1)
+        row += 1
 
-        self.bottom_thick_field = OptimizableField("Bottom Flange Thickness")
-        self.prepare_optimizable_field(self.bottom_thick_field)
-        row = self.add_plate_row(row, "Bottom Flange Thickness (mm):", self.bottom_thick_field)
+        lbl_top_thick = QLabel("Top Flange Thickness (mm):")
+        lbl_top_thick.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_top_thick, row, 0)
+        
+        self.top_flange_thickness = QComboBox()
+        self.top_flange_thickness.addItems(["All", "Custom"])
+        apply_field_style(self.top_flange_thickness)
+        inputs_grid.addWidget(self.top_flange_thickness, row, 1)
+        row += 1
 
-        self.depth_field = OptimizableField("Depth of Section")
-        self.prepare_optimizable_field(self.depth_field)
-        row = self.add_plate_row(row, "Depth of Section (mm):", self.depth_field)
+        lbl_bot_width = QLabel("Width of Bottom Flange (mm):")
+        lbl_bot_width.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_bot_width, row, 0)
+        
+        self.bottom_flange_width = QLineEdit()
+        apply_field_style(self.bottom_flange_width)
+        inputs_grid.addWidget(self.bottom_flange_width, row, 1)
+        row += 1
 
-        self.web_thick_field = OptimizableField("Web Thickness")
-        self.prepare_optimizable_field(self.web_thick_field)
-        row = self.add_plate_row(row, "Web Thickness (mm):", self.web_thick_field)
+        lbl_bot_thick = QLabel("Bottom Flange Thickness (mm):")
+        lbl_bot_thick.setStyleSheet(label_style)
+        inputs_grid.addWidget(lbl_bot_thick, row, 0)
+        
+        self.bottom_flange_thickness = QComboBox()
+        self.bottom_flange_thickness.addItems(["All", "Custom"])
+        apply_field_style(self.bottom_flange_thickness)
+        inputs_grid.addWidget(self.bottom_flange_thickness, row, 1)
+        row += 1
 
-        self.torsion_combo = QComboBox()
-        self.torsion_combo.addItems(VALUES_TORSIONAL_RESTRAINT)
-        apply_field_style(self.torsion_combo)
-        row = self.add_plate_row(row, "Torsional Restraint:", self.torsion_combo)
+        inputs_layout.addLayout(inputs_grid)
+        left_column.addWidget(inputs_group)
 
-        self.warp_combo = QComboBox()
-        self.warp_combo.addItems(VALUES_WARPING_RESTRAINT)
-        apply_field_style(self.warp_combo)
-        row = self.add_plate_row(row, "Warping Restraint:", self.warp_combo)
+        # Restraints Group
+        restraints_group = QGroupBox()
+        restraints_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
+            }
+        """)
+        restraints_layout = QGridLayout(restraints_group)
+        restraints_layout.setContentsMargins(15, 15, 15, 15)
+        restraints_layout.setHorizontalSpacing(15)
+        restraints_layout.setVerticalSpacing(15)
+        restraints_layout.setColumnStretch(1, 1)
 
-        self.web_type_combo = QComboBox()
-        self.web_type_combo.addItems(VALUES_WEB_TYPE)
-        apply_field_style(self.web_type_combo)
-        row = self.add_plate_row(row, "Web Type* :", self.web_type_combo)
+        r_row = 0
+        lbl_torsion = QLabel("Torsional Restraint:")
+        lbl_torsion.setStyleSheet(label_style)
+        restraints_layout.addWidget(lbl_torsion, r_row, 0)
+        
+        self.torsional_restraint = QComboBox()
+        self.torsional_restraint.addItems(["Fully Restrained", "Free"])
+        apply_field_style(self.torsional_restraint)
+        restraints_layout.addWidget(self.torsional_restraint, r_row, 1)
+        r_row += 1
 
-        self.girder_type_combo.currentTextChanged.connect(self.on_girder_type_changed)
-        self.on_girder_type_changed(self.girder_type_combo.currentText())
+        lbl_warping = QLabel("Warping Restraint:")
+        lbl_warping.setStyleSheet(label_style)
+        restraints_layout.addWidget(lbl_warping, r_row, 0)
+        
+        self.warping_restraint = QComboBox()
+        self.warping_restraint.addItems(["Both flanges fully restrained", "Free"])
+        apply_field_style(self.warping_restraint)
+        restraints_layout.addWidget(self.warping_restraint, r_row, 1)
+        r_row += 1
 
-    def create_label(self, text):
-        label = QLabel(text)
-        label.setStyleSheet("font-size: 13px; color: #2f2f2f; font-weight: 600;")
-        return label
+        lbl_web_type = QLabel("Web Type*:")
+        lbl_web_type.setStyleSheet(label_style)
+        restraints_layout.addWidget(lbl_web_type, r_row, 0)
+        
+        self.web_type = QComboBox()
+        self.web_type.addItems(["Thin Web with ITS", "Stocky Web"])
+        apply_field_style(self.web_type)
+        restraints_layout.addWidget(self.web_type, r_row, 1)
 
-    def prepare_optimizable_field(self, field):
-        field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        apply_field_style(field.mode_combo)
-        apply_field_style(field.input_field)
+        left_column.addWidget(restraints_group)
+        content_layout.addLayout(left_column, 1)
 
-    def add_plate_row(self, row, text, widget):
-        label = self.create_label(text)
-        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.form_layout.addWidget(label, row, 0, Qt.AlignVCenter)
-        self.form_layout.addWidget(widget, row, 1)
-        self.plate_rows.append((label, widget))
-        return row + 1
+        # Right Column
+        right_column = QVBoxLayout()
+        right_column.setSpacing(10)
 
-    def on_girder_type_changed(self, text):
-        is_standard = text == "IS Standard Rolled Beam"
-        self.is_section_label.setVisible(is_standard)
-        self.is_beam_combo.setVisible(is_standard)
-        for label, widget in self.plate_rows:
-            label.setVisible(not is_standard)
-            widget.setVisible(not is_standard)
+        # Image Preview
+        image_frame = QFrame()
+        image_frame.setStyleSheet("""
+            QFrame {
+                background-color: #d9d9d9;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
+            }
+        """)
+        image_frame.setMinimumHeight(200)
+        image_layout = QVBoxLayout(image_frame)
+        image_label = QLabel("Dynamic Image")
+        image_label.setStyleSheet("color: #333333; font-weight: bold;")
+        image_label.setAlignment(Qt.AlignCenter)
+        image_layout.addWidget(image_label)
+        
+        right_column.addWidget(image_frame)
+
+        # Section Properties Group
+        props_group = QGroupBox()
+        props_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 1px solid #b0b0b0;
+                border-radius: 8px;
+                padding-top: 10px;
+            }
+        """)
+        props_layout = QVBoxLayout(props_group)
+        props_layout.setContentsMargins(15, 15, 15, 15)
+        
+        props_title = QLabel("Section Properties:")
+        props_title.setStyleSheet(title_style)
+        props_layout.addWidget(props_title)
+
+        props_grid = QGridLayout()
+        props_grid.setHorizontalSpacing(15)
+        props_grid.setVerticalSpacing(10)
+        props_grid.setColumnStretch(1, 1)
+
+        properties = [
+            ("Mass, M (Kg/m)", ""),
+            ("Sectional Area, a (cm2)", ""),
+            ("2nd Moment of Area, Iz (cm4)", ""),
+            ("2nd Moment of Area, Iv (cm4)", ""),
+            ("Radius of Gyration, rz (cm)", ""),
+            ("Radius of Gyration, rv (cm)", ""),
+            ("Elastic Modulus, Zz (cm3)", ""),
+            ("Elastic Modulus, Zv (cm3)", ""),
+            ("Plastic Modulus, Zuz (cm3)", ""),
+            ("Plastic Modulus, Zuv (cm3)", ""),
+            ("Torsion Constant, It (cm4)", ""),
+            ("Warping Constant, Iw (cm6)", ""),
+        ]
+
+        self.prop_inputs = {}
+        for i, (label_text, _) in enumerate(properties):
+            lbl_prop = QLabel(label_text)
+            lbl_prop.setStyleSheet(label_style)
+            props_grid.addWidget(lbl_prop, i, 0)
+            
+            line_edit = QLineEdit()
+            line_edit.setReadOnly(True)
+            apply_field_style(line_edit)
+            props_grid.addWidget(line_edit, i, 1)
+            self.prop_inputs[label_text] = line_edit
+
+        props_layout.addLayout(props_grid)
+        right_column.addWidget(props_group)
+
+        content_layout.addLayout(right_column, 1)
+        container_layout.addLayout(content_layout)
+        container_layout.addStretch()
 
 
 class StiffenerDetailsTab(QWidget):
