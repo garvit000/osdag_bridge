@@ -1,5 +1,4 @@
 import sys
-import os
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -10,17 +9,13 @@ from PySide6.QtWidgets import (
     QSplitter,
     QSizePolicy,
     QPushButton,
-    QGroupBox,
-    QLineEdit,
-    QComboBox,
     QCheckBox,
     QScrollArea,
     QFrame,
 )
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 
-from input_dock import InputDock
+from input_dock import InputDock, NoScrollComboBox, apply_field_style
 from backend import BackendOsBridge
 from common import *
 
@@ -48,49 +43,42 @@ class DummyCADWidget(QWidget):
 
 
 class OutputDock(QWidget):
-    """Output dock with collapsible design controls and scrollable layout."""
+    """Output dock styled to match the provided mockup."""
 
     def __init__(self):
         super().__init__()
+        self.setObjectName("outputDock")
         self.setStyleSheet(
             """
-            QWidget {
-                background-color: white;
+            QWidget#outputDock {
+                background-color: #fdfdf8;
+                border-left: 2px solid #d7d9c8;
             }
             """
         )
         self.init_ui()
 
     def init_ui(self):
-        from input_dock import NoScrollComboBox, apply_field_style
-
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(10)
+        main_layout.setSpacing(12)
 
         title_bar = QWidget()
+        title_bar.setFixedHeight(40)
+        title_bar.setObjectName("outputHeader")
         title_bar.setStyleSheet(
             """
-            QWidget {
+            QWidget#outputHeader {
                 background-color: #90AF13;
-                border-radius: 4px;
+                border-radius: 12px;
             }
             """
         )
-        title_bar.setFixedHeight(35)
         title_layout = QHBoxLayout(title_bar)
-        title_layout.setContentsMargins(12, 0, 12, 0)
+        title_layout.setContentsMargins(14, 0, 14, 0)
 
         title_label = QLabel("Output Dock")
-        title_label.setStyleSheet(
-            """
-            QLabel {
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            """
-        )
+        title_label.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         main_layout.addWidget(title_bar)
@@ -98,298 +86,261 @@ class OutputDock(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("QScrollArea { border: none; background: white; }")
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(10)
+        scroll_layout.setSpacing(14)
 
-        results_group = QGroupBox("Analysis Results")
-        results_group.setStyleSheet(
-            """
-            QGroupBox {
+        analysis_frame, analysis_body_layout = self._create_section_frame("Analysis Results")
+        self._populate_analysis_section(analysis_body_layout)
+        scroll_layout.addWidget(analysis_frame)
+
+        design_frame, design_body_layout = self._create_section_frame("Design")
+        self._populate_design_section(design_body_layout)
+        scroll_layout.addWidget(design_frame)
+
+        scroll_layout.addStretch()
+        scroll.setWidget(scroll_content)
+        main_layout.addWidget(scroll)
+
+        button_style = """
+            QPushButton {
+                background-color: #90AF13;
+                color: white;
                 font-weight: bold;
+                border: none;
+                border-radius: 14px;
+                padding: 10px 16px;
                 font-size: 11px;
-                color: #333;
-                border: 1px solid #d0d0d0;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 12px;
-                background-color: white;
             }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 8px;
-                padding: 0 4px;
+            QPushButton:hover {
+                background-color: #7b980f;
+            }
+        """
+
+        results_btn = QPushButton("Generate Results Table")
+        results_btn.setStyleSheet(button_style)
+        main_layout.addWidget(results_btn)
+
+        report_btn = QPushButton("Generate Report")
+        report_btn.setStyleSheet(button_style)
+        main_layout.addWidget(report_btn)
+
+    def _create_section_frame(self, title: str):
+        frame = QFrame()
+        frame.setObjectName("outputSection")
+        frame.setStyleSheet(
+            """
+            QFrame#outputSection {
+                border: 1px solid #cdd874;
+                border-radius: 18px;
                 background-color: white;
             }
             """
         )
-        results_layout = QVBoxLayout(results_group)
-        results_layout.setContentsMargins(10, 8, 10, 10)
-        results_layout.setSpacing(8)
 
+        outer_layout = QVBoxLayout(frame)
+        outer_layout.setContentsMargins(16, 12, 16, 16)
+        outer_layout.setSpacing(10)
+
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
+        title_label = QLabel(title)
+        title_label.setStyleSheet("font-size: 11px; font-weight: bold; color: #2d2d2d;")
+        header_layout.addWidget(title_label)
+        header_layout.addStretch()
+
+        toggle_btn = QPushButton("-")
+        toggle_btn.setObjectName("sectionToggle")
+        toggle_btn.setCheckable(True)
+        toggle_btn.setChecked(True)
+        toggle_btn.setFixedSize(22, 22)
+        toggle_btn.setStyleSheet(
+            """
+            QPushButton#sectionToggle {
+                background-color: white;
+                border: 1px solid #93ad1d;
+                border-radius: 11px;
+                color: #6d7a13;
+                font-weight: bold;
+            }
+            QPushButton#sectionToggle:hover {
+                background-color: #f5f5f5;
+            }
+            """
+        )
+        header_layout.addWidget(toggle_btn)
+        outer_layout.addLayout(header_layout)
+
+        accent_line = QFrame()
+        accent_line.setFixedHeight(2)
+        accent_line.setStyleSheet("background-color: #90AF13; border: none;")
+        outer_layout.addWidget(accent_line)
+
+        body_widget = QWidget()
+        body_layout = QVBoxLayout(body_widget)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(10)
+        outer_layout.addWidget(body_widget)
+
+        def on_toggle(checked):
+            body_widget.setVisible(checked)
+            toggle_btn.setText("-" if checked else "+")
+
+        toggle_btn.toggled.connect(on_toggle)
+
+        return frame, body_layout
+
+    def _populate_analysis_section(self, layout: QVBoxLayout):
         member_row = QHBoxLayout()
+        member_row.setSpacing(10)
         member_label = QLabel("Member:")
-        member_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
-        member_label.setMinimumWidth(100)
+        member_label.setStyleSheet("font-size: 10px; color: #333;")
+        member_label.setMinimumWidth(90)
         self.member_combo = NoScrollComboBox()
         self.member_combo.addItems(["All"])
         apply_field_style(self.member_combo)
         member_row.addWidget(member_label)
         member_row.addWidget(self.member_combo)
-        results_layout.addLayout(member_row)
+        layout.addLayout(member_row)
 
-        load_combo_row = QHBoxLayout()
-        load_combo_label = QLabel("Load Combination:")
-        load_combo_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal;")
-        load_combo_label.setMinimumWidth(100)
+        load_row = QHBoxLayout()
+        load_row.setSpacing(10)
+        load_label = QLabel("Load Combination:")
+        load_label.setStyleSheet("font-size: 10px; color: #333;")
+        load_label.setMinimumWidth(90)
         self.load_combo = NoScrollComboBox()
         self.load_combo.addItems(["Envelope"])
         apply_field_style(self.load_combo)
-        load_combo_row.addWidget(load_combo_label)
-        load_combo_row.addWidget(self.load_combo)
-        results_layout.addLayout(load_combo_row)
+        load_row.addWidget(load_label)
+        load_row.addWidget(self.load_combo)
+        layout.addLayout(load_row)
 
         forces_grid = QHBoxLayout()
-        forces_grid.setSpacing(8)
-
-        col1 = QVBoxLayout()
-        for text in ["Fx", "Mx", "Dx"]:
-            cb = QCheckBox(text)
-            cb.setStyleSheet("font-size: 10px; color: #333;")
-            col1.addWidget(cb)
-        col2 = QVBoxLayout()
-        for text in ["Fy", "My", "Dy"]:
-            cb = QCheckBox(text)
-            cb.setStyleSheet("font-size: 10px; color: #333;")
-            col2.addWidget(cb)
-        col3 = QVBoxLayout()
-        for text in ["Fz", "Mz", "Dz"]:
-            cb = QCheckBox(text)
-            cb.setStyleSheet("font-size: 10px; color: #333;")
-            col3.addWidget(cb)
-        forces_grid.addLayout(col1)
-        forces_grid.addLayout(col2)
-        forces_grid.addLayout(col3)
-        results_layout.addLayout(forces_grid)
+        forces_grid.setSpacing(12)
+        for items in (("Fx", "Mx", "Dx"), ("Fy", "My", "Dy"), ("Fz", "Mz", "Dz")):
+            column = QVBoxLayout()
+            column.setSpacing(6)
+            for text in items:
+                cb = QCheckBox(text)
+                cb.setStyleSheet("font-size: 10px; color: #333;")
+                column.addWidget(cb)
+            forces_grid.addLayout(column)
+        layout.addLayout(forces_grid)
 
         display_label = QLabel("Display Options:")
-        display_label.setStyleSheet("font-size: 10px; color: #333; font-weight: normal; margin-top: 4px;")
-        results_layout.addWidget(display_label)
+        display_label.setStyleSheet("font-size: 10px; color: #333;")
+        layout.addWidget(display_label)
 
         display_row = QHBoxLayout()
         display_row.setSpacing(12)
-        for text in ["Max", "Min"]:
+        for text in ("Max", "Min"):
             cb = QCheckBox(text)
             cb.setStyleSheet("font-size: 10px; color: #333;")
             display_row.addWidget(cb)
         display_row.addStretch()
-        results_layout.addLayout(display_row)
+        layout.addLayout(display_row)
 
         utilization_check = QCheckBox("Controlling Utilization Ratio")
         utilization_check.setStyleSheet("font-size: 10px; color: #333;")
-        results_layout.addWidget(utilization_check)
+        layout.addWidget(utilization_check)
 
-        scroll_layout.addWidget(results_group)
+    def _populate_design_section(self, layout: QVBoxLayout):
+        super_frame = self._create_design_subframe("Superstructure", ["Steel Design", "Deck Design"])
+        layout.addWidget(super_frame)
 
-        design_group = QGroupBox("Design")
-        design_group.setStyleSheet(
+        sub_frame = self._create_design_subframe("Substructure")
+        layout.addWidget(sub_frame)
+
+    def _create_design_subframe(self, title: str, button_labels=None):
+        frame = QFrame()
+        frame.setObjectName("designSubSection")
+        frame.setStyleSheet(
             """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 11px;
-                color: #333;
-                border: 1px solid #d0d0d0;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 12px;
+            QFrame#designSubSection {
+                border: 1px solid #e0e8a4;
+                border-radius: 14px;
+                background-color: #fcfdf4;
+            }
+            """
+        )
+
+        outer_layout = QVBoxLayout(frame)
+        outer_layout.setContentsMargins(12, 8, 12, 12)
+        outer_layout.setSpacing(8)
+
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
+        title_label = QLabel(title)
+        title_label.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
+        header_layout.addWidget(title_label)
+        header_layout.addStretch()
+
+        toggle_btn = QPushButton("-")
+        toggle_btn.setObjectName("designToggle")
+        toggle_btn.setCheckable(True)
+        toggle_btn.setChecked(True)
+        toggle_btn.setFixedSize(22, 22)
+        toggle_btn.setStyleSheet(
+            """
+            QPushButton#designToggle {
                 background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 8px;
-                padding: 0 4px;
-                background-color: white;
-            }
-            """
-        )
-        design_layout = QVBoxLayout(design_group)
-        design_layout.setContentsMargins(10, 8, 10, 10)
-        design_layout.setSpacing(8)
-
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        svg_down = os.path.join(base_dir, "dropdown_down.svg").replace("\\", "/")
-        svg_up = os.path.join(base_dir, "dropdown_up.svg").replace("\\", "/")
-
-        super_frame = QFrame()
-        super_frame.setStyleSheet(
-            """
-            QFrame {
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                background: white;
-            }
-            """
-        )
-        super_layout = QVBoxLayout(super_frame)
-        super_layout.setContentsMargins(8, 6, 8, 6)
-        super_layout.setSpacing(6)
-
-        super_header = QHBoxLayout()
-        super_title = QLabel("Superstructure")
-        super_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
-        super_header.addWidget(super_title)
-        super_header.addStretch()
-
-        super_toggle = QPushButton()
-        super_toggle.setCheckable(True)
-        super_toggle.setChecked(True)
-        super_toggle.setIcon(QIcon(svg_up))
-        super_toggle.setIconSize(QSize(14, 14))
-        super_toggle.setStyleSheet(
-            """
-            QPushButton {
-                background: transparent;
-                border: none;
-                padding: 2px;
-            }
-            """
-        )
-        super_header.addWidget(super_toggle)
-        super_layout.addLayout(super_header)
-
-        super_body = QWidget()
-        super_body_layout = QVBoxLayout(super_body)
-        super_body_layout.setContentsMargins(0, 0, 0, 0)
-        super_body_layout.setSpacing(6)
-
-        for text in ["Steel Design", "Deck Design"]:
-            btn = QPushButton(text)
-            btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: white;
-                    color: #333;
-                    border: 1px solid #b0b0b0;
-                    border-radius: 3px;
-                    padding: 8px;
-                    font-size: 10px;
-                    font-weight: normal;
-                    text-align: center;
-                }
-                QPushButton:hover {
-                    background-color: #f5f5f5;
-                }
-                """
-            )
-            super_body_layout.addWidget(btn)
-
-        super_layout.addWidget(super_body)
-
-        def toggle_super(checked: bool):
-            super_body.setVisible(checked)
-            super_toggle.setIcon(QIcon(svg_up if checked else svg_down))
-
-        super_toggle.toggled.connect(toggle_super)
-        design_layout.addWidget(super_frame)
-
-        sub_frame = QFrame()
-        sub_frame.setStyleSheet(
-            """
-            QFrame {
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                background: white;
-            }
-            """
-        )
-        sub_layout = QVBoxLayout(sub_frame)
-        sub_layout.setContentsMargins(8, 6, 8, 6)
-        sub_layout.setSpacing(6)
-
-        sub_header = QHBoxLayout()
-        sub_title = QLabel("Substructure")
-        sub_title.setStyleSheet("font-size: 10px; font-weight: bold; color: #333;")
-        sub_header.addWidget(sub_title)
-        sub_header.addStretch()
-
-        sub_toggle = QPushButton()
-        sub_toggle.setCheckable(True)
-        sub_toggle.setChecked(True)
-        sub_toggle.setIcon(QIcon(svg_up))
-        sub_toggle.setIconSize(QSize(14, 14))
-        sub_toggle.setStyleSheet(
-            """
-            QPushButton {
-                background: transparent;
-                border: none;
-                padding: 2px;
-            }
-            """
-        )
-        sub_header.addWidget(sub_toggle)
-        sub_layout.addLayout(sub_header)
-
-        sub_body = QWidget()
-        sub_body_layout = QVBoxLayout(sub_body)
-        sub_body_layout.setContentsMargins(0, 0, 0, 0)
-        sub_body_layout.setSpacing(0)
-        sub_layout.addWidget(sub_body)
-
-        def toggle_sub(checked: bool):
-            sub_body.setVisible(checked)
-            sub_toggle.setIcon(QIcon(svg_up if checked else svg_down))
-
-        sub_toggle.toggled.connect(toggle_sub)
-        design_layout.addWidget(sub_frame)
-
-        scroll_layout.addWidget(design_group)
-        scroll_layout.addStretch()
-
-        scroll.setWidget(scroll_content)
-        main_layout.addWidget(scroll)
-
-        results_btn = QPushButton("Generate Results Table")
-        results_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #90AF13;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 10px;
-                font-size: 11px;
+                border: 1px solid #bcc66d;
+                border-radius: 11px;
+                color: #6d7a13;
                 font-weight: bold;
             }
-            QPushButton:hover {
-                background-color: #7a9a12;
+            QPushButton#designToggle:hover {
+                background-color: #f5f5f5;
             }
             """
         )
-        main_layout.addWidget(results_btn)
+        header_layout.addWidget(toggle_btn)
+        outer_layout.addLayout(header_layout)
 
-        report_btn = QPushButton("Generate Report")
-        report_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #90AF13;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 10px;
-                font-size: 11px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #7a9a12;
-            }
-            """
-        )
-        main_layout.addWidget(report_btn)
+        body_widget = QWidget()
+        body_layout = QVBoxLayout(body_widget)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(6)
+        outer_layout.addWidget(body_widget)
+
+        if button_labels:
+            for text in button_labels:
+                btn = QPushButton(text)
+                btn.setObjectName("designActionBtn")
+                btn.setStyleSheet(
+                    """
+                    QPushButton#designActionBtn {
+                        background-color: white;
+                        color: #3b3b3b;
+                        border: 1px solid #c7c7c7;
+                        border-radius: 14px;
+                        padding: 8px;
+                        font-size: 10px;
+                        font-weight: bold;
+                    }
+                    QPushButton#designActionBtn:hover {
+                        background-color: #f7f7f7;
+                    }
+                    """
+                )
+                body_layout.addWidget(btn)
+        else:
+            placeholder = QLabel(" ")
+            placeholder.setMinimumHeight(28)
+            body_layout.addWidget(placeholder)
+
+        def on_toggle(checked):
+            body_widget.setVisible(checked)
+            toggle_btn.setText("-" if checked else "+")
+
+        toggle_btn.toggled.connect(on_toggle)
+
+        return frame
 
 
 class DummyLogDock(QWidget):

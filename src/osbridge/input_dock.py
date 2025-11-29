@@ -1093,7 +1093,6 @@ class InputDock(QWidget):
         sub_layout.setContentsMargins(10, 10, 10, 10)
         sub_layout.setSpacing(8)
 
-        # Header with toggle
         sub_header = QHBoxLayout()
         sub_title = QLabel("Substructure")
         sub_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #333;")
