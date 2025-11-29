@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QMenuBar,
     QSplitter,
     QSizePolicy,
+<<<<<<< HEAD
     QPushButton,
     QCheckBox,
     QScrollArea,
@@ -18,6 +19,19 @@ from PySide6.QtCore import Qt
 from input_dock import InputDock, NoScrollComboBox, apply_field_style
 from backend import BackendOsBridge
 from common import *
+=======
+)
+from PySide6.QtCore import Qt, QFile, QTextStream
+from PySide6.QtGui import QIcon
+
+# Import resources to register them
+from osbridge.resources import resources_rc
+
+from osbridge.ui.input_dock import InputDock
+from osbridge.ui.output_dock import OutputDock
+from osbridge.backend.backend import BackendOsBridge
+from osbridge.backend.common import *
+>>>>>>> 81a220d3af4603d99560ba55fc7eff99cec8b3e0
 
 
 class DummyCADWidget(QWidget):
@@ -32,7 +46,7 @@ class DummyCADWidget(QWidget):
             """
             QLabel {
                 background-color: #f0f0f0;
-                border: 2px dashed #999;
+                border: 1px solid #999;
                 padding: 40px;
                 font-size: 18px;
                 color: #666;
@@ -42,6 +56,7 @@ class DummyCADWidget(QWidget):
         layout.addWidget(label)
 
 
+<<<<<<< HEAD
 class OutputDock(QWidget):
     """Output dock styled to match the provided mockup."""
 
@@ -343,6 +358,8 @@ class OutputDock(QWidget):
         return frame
 
 
+=======
+>>>>>>> 81a220d3af4603d99560ba55fc7eff99cec8b3e0
 class DummyLogDock(QWidget):
     """Placeholder for log dock."""
 
@@ -417,58 +434,54 @@ class CustomWindow(QWidget):
         body_layout.setContentsMargins(0, 0, 0, 0)
         body_layout.setSpacing(0)
 
-        splitter = QSplitter(Qt.Horizontal, body_widget)
+        # Main horizontal splitter
+        main_splitter = QSplitter(Qt.Horizontal, body_widget)
 
+        # Input dock
         input_dock = InputDock(backend=self.backend, parent=self)
-        input_dock.setMinimumWidth(300)
+        input_dock.setMinimumWidth(380)
         input_dock.setMaximumWidth(450)
-        splitter.addWidget(input_dock)
+        main_splitter.addWidget(input_dock)
 
-        central_widget = QWidget()
-        central_layout = QVBoxLayout(central_widget)
-        central_layout.setContentsMargins(0, 0, 0, 0)
-        central_layout.setSpacing(0)
-
+        # CAD widget
         cad_widget = DummyCADWidget()
-        central_layout.addWidget(cad_widget, 3)
+        main_splitter.addWidget(cad_widget)
 
-        logs_dock = DummyLogDock()
-        central_layout.addWidget(logs_dock, 1)
-        splitter.addWidget(central_widget)
-
+        # Output dock
         output_dock = OutputDock()
-        output_dock.setMinimumWidth(250)
-        output_dock.setMaximumWidth(350)
-        splitter.addWidget(output_dock)
+        output_dock.setMinimumWidth(350)
+        output_dock.setMaximumWidth(450)
+        main_splitter.addWidget(output_dock)
 
-        body_layout.addWidget(splitter)
+        body_layout.addWidget(main_splitter)
 
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-        splitter.setStretchFactor(2, 0)
+        # Set stretch factors for main splitter
+        main_splitter.setStretchFactor(0, 0)  # Input dock - fixed
+        main_splitter.setStretchFactor(1, 1)  # Central area - expandable
+        main_splitter.setStretchFactor(2, 0)  # Output dock - fixed
 
-        input_dock_width = 240
-        output_dock_width = 270
+        # Set initial sizes
+        input_dock_width = 350
+        output_dock_width = 280
         total_width = self.width() if self.width() > 0 else 1200
         central_width = max(500, total_width - input_dock_width - output_dock_width)
-        splitter.setSizes([input_dock_width, central_width, output_dock_width])
+        main_splitter.setSizes([input_dock_width, central_width, output_dock_width])
 
         main_v_layout.addWidget(body_widget)
 
-        self.splitter = splitter
+        # Store references
+        self.main_splitter = main_splitter
         self.input_dock = input_dock
         self.output_dock = output_dock
         self.cad_widget = cad_widget
-        self.logs_dock = logs_dock
 
 
 def main():
-    app = QApplication(sys.argv)
-    window = CustomWindow("Fin Plate Connection - Test", BackendOsBridge)
-    window.resize(1200, 800)
+    app = QApplication(sys.argv)   
+    window = CustomWindow("Osdag Bridge", BackendOsBridge)
+    window.showMaximized()
     window.show()
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()

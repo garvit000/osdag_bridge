@@ -13,18 +13,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 
-from common import *
+from osbridge.backend.common import *
 
 
 def get_combobox_style():
-    """Return the common stylesheet for dropdowns with the SVG icon from file."""
-    # Get the paths to the down/up arrow SVG files
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    svg_down = os.path.join(current_dir, "dropdown_down.svg").replace("\\", "/")
-    svg_up = os.path.join(current_dir, "dropdown_up.svg").replace("\\", "/")
-    
-    return f"""
-        QComboBox {{
+    """Return the common stylesheet for dropdowns with the SVG icon from resources."""
+    return """
+        QComboBox {
             padding: 6px 42px 6px 14px;
             border: 1px solid #b8b8b8;
             border-radius: 8px;
@@ -32,14 +27,14 @@ def get_combobox_style():
             color: #2b2b2b;
             font-size: 12px;
             min-height: 34px;
-        }}
-        QComboBox:hover {{
+        }
+        QComboBox:hover {
             border: 1px solid #909090;
-        }}
-        QComboBox:focus {{
+        }
+        QComboBox:focus {
             border: 1px solid #4a7ba7;
-        }}
-        QComboBox::drop-down {{
+        }
+        QComboBox::drop-down {
             subcontrol-origin: padding;
             subcontrol-position: center right;
             width: 26px;
@@ -49,18 +44,18 @@ def get_combobox_style():
             border: none;
             background: transparent;
             right: 8px;
-        }}
-        QComboBox::down-arrow {{
-            image: url({svg_down});
+        }
+        QComboBox::down-arrow {
+            image: url(:/vectors/arrow_down_light.svg);
             width: 16px;
             height: 16px;
-        }}
+        }
         /* when popup is open show the up arrow */
-        QComboBox::down-arrow:on {{
-            image: url({svg_up});
+        QComboBox::down-arrow:on {
+            image: url(:/vectors/arrow_up_light.svg);
             width: 16px;
             height: 16px;
-        }}
+        }
         QComboBox QAbstractItemView {{
             border: 1px solid #b8b8b8;
             background: #ffffff;

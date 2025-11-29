@@ -1,4 +1,4 @@
-from common import *
+from .common import *
 
 class BackendOsBridge:
     """Backend for Highway Bridge Design"""
@@ -86,3 +86,4 @@ class BackendOsBridge:
     def get_3d_components(self):
         """Mock 3D components"""
         return []
+
