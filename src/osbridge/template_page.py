@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QMenuBar,
     QSplitter,
     QSizePolicy,
-<<<<<<< HEAD
     QPushButton,
     QCheckBox,
     QScrollArea,
@@ -16,22 +15,19 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from input_dock import InputDock, NoScrollComboBox, apply_field_style
-from backend import BackendOsBridge
-from common import *
-=======
-)
+#from input_dock import InputDock, NoScrollComboBox, apply_field_style
+#from backend import BackendOsBridge
+#from common import *
 from PySide6.QtCore import Qt, QFile, QTextStream
 from PySide6.QtGui import QIcon
 
 # Import resources to register them
 from osbridge.resources import resources_rc
 
-from osbridge.ui.input_dock import InputDock
+from osbridge.ui.input_dock import InputDock, NoScrollComboBox, apply_field_style
 from osbridge.ui.output_dock import OutputDock
 from osbridge.backend.backend import BackendOsBridge
 from osbridge.backend.common import *
->>>>>>> 81a220d3af4603d99560ba55fc7eff99cec8b3e0
 
 
 class DummyCADWidget(QWidget):
@@ -56,7 +52,6 @@ class DummyCADWidget(QWidget):
         layout.addWidget(label)
 
 
-<<<<<<< HEAD
 class OutputDock(QWidget):
     """Output dock styled to match the provided mockup."""
 
@@ -358,8 +353,6 @@ class OutputDock(QWidget):
         return frame
 
 
-=======
->>>>>>> 81a220d3af4603d99560ba55fc7eff99cec8b3e0
 class DummyLogDock(QWidget):
     """Placeholder for log dock."""
 
