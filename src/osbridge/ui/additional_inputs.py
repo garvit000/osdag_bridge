@@ -118,7 +118,7 @@ SECTION_NAV_BUTTON_STYLE = """
         border-color: #b5b5b5;
     }
     QPushButton:checked {
-        background-color: #9ecb3d;
+        background-color: #90af13;
         border-color: #7da523;
         color: #ffffff;
     }
@@ -1866,9 +1866,9 @@ class AdditionalInputsWidget(QWidget):
                 font-weight: 500;
             }
             QTabBar::tab:selected {
-                background: #9ecb3d;
+                background: #90af13;
                 color: #ffffff;
-                border: 1px solid #9ecb3d;
+                border: 1px solid #90af13;
                 border-bottom: none;
             }
             QTabBar::tab:hover:!selected {
