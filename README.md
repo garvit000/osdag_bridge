@@ -49,12 +49,7 @@ PySide6>=6.5.0
 
 ### Running the Application
 
-From the project root directory:
+Run as a module from src directory:
 ```bash
-python src/osbridge/template_page.py
+python -m osbridge.template_page
 ```
-
-Or from within the osbridge directory:
-```bash
-cd src/osbridge
-python template_page.py
