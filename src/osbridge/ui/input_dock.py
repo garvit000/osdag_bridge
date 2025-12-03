@@ -160,32 +160,59 @@ class MaterialPropertiesDialog(QDialog):
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 16, 20, 16)
-        main_layout.setSpacing(14)
 
-        header = QLabel("Material Inputs")
-        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #1d1d1d;")
-        main_layout.addWidget(header)
-
-        combo_row = QFormLayout()
-        combo_row.setHorizontalSpacing(18)
-        combo_row.setVerticalSpacing(10)
-        combo_row.setLabelAlignment(Qt.AlignLeft)
-        combo_row.addRow("Member*:", self.member_combo)
-        combo_row.addRow("Material*:", self.material_combo)
-        main_layout.addLayout(combo_row)
+        # Create a container widget for all form fields
+        form_container = QWidget()
+        form_layout = QVBoxLayout(form_container)
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setSpacing(10)
+        
+        # Member row
+        member_row = QHBoxLayout()
+        member_row.setContentsMargins(0, 0, 0, 0)
+        member_row.setSpacing(18)
+        member_label = QLabel("Member*:")
+        member_label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+        member_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        member_label.setFixedWidth(280)
+        self.member_combo.setFixedWidth(242)
+        member_row.addWidget(member_label)
+        member_row.addWidget(self.member_combo)
+        member_row.addStretch()
+        form_layout.addLayout(member_row)
+        
+        # Material row
+        material_row = QHBoxLayout()
+        material_row.setContentsMargins(0, 0, 0, 0)
+        material_row.setSpacing(18)
+        material_label = QLabel("Material*:")
+        material_label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+        material_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        material_label.setFixedWidth(280)
+        self.material_combo.setFixedWidth(242)
+        material_row.addWidget(material_label)
+        material_row.addWidget(self.material_combo)
+        material_row.addStretch()
+        form_layout.addLayout(material_row)
+        
+        main_layout.addWidget(form_container)
 
         self.stack = QStackedWidget()
+        self.stack.setContentsMargins(0, 0, 0, 0)
         self.steel_page = self._build_steel_form()
         self.deck_page = self._build_deck_form()
         self.stack.addWidget(self.steel_page)
         self.stack.addWidget(self.deck_page)
         main_layout.addWidget(self.stack)
 
+        # Updated default row with proper alignment
         default_row = QHBoxLayout()
         default_row.setContentsMargins(0, 0, 0, 0)
-        default_row.setSpacing(8)
+        default_row.setSpacing(18)
         default_label = QLabel("Default")
-        default_label.setStyleSheet("font-size: 12px; color: #1d1d1d;")
+        default_label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+        default_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        default_label.setFixedWidth(280)
         self.default_checkbox = QCheckBox()
         self.default_checkbox.setStyleSheet(
             """
@@ -205,9 +232,16 @@ class MaterialPropertiesDialog(QDialog):
             }
             """
         )
+        # Create container for checkbox to align it to the left
+        checkbox_container = QWidget()
+        checkbox_layout = QHBoxLayout(checkbox_container)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+        checkbox_layout.setSpacing(0)
+        checkbox_layout.addWidget(self.default_checkbox)
+        checkbox_layout.addStretch()
+        
         default_row.addWidget(default_label)
-        default_row.addWidget(self.default_checkbox)
-        default_row.addStretch()
+        default_row.addWidget(checkbox_container)
         main_layout.addLayout(default_row)
 
         self.member_combo.currentTextChanged.connect(self._on_member_changed)
@@ -223,59 +257,89 @@ class MaterialPropertiesDialog(QDialog):
 
     def _build_steel_form(self):
         widget = QWidget()
-        layout = QFormLayout(widget)
-        layout.setLabelAlignment(Qt.AlignLeft)
-        layout.setHorizontalSpacing(18)
-        layout.setVerticalSpacing(10)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
         self.steel_field_inputs = {}
         for label_text in STEEL_MEMBER_FIELDS:
+            row = QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(18)
             label = QLabel(label_text)
             label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setFixedWidth(280)
             line_edit = QLineEdit()
+            line_edit.setFixedWidth(242)
             apply_field_style(line_edit)
+            # Add validator for 1 decimal place
+            line_edit.setValidator(QDoubleValidator(0.0, 99999.0, 1))
             line_edit.textEdited.connect(self._handle_user_override)
             self.steel_field_inputs[label_text] = line_edit
-            layout.addRow(label, line_edit)
+            row.addWidget(label)
+            row.addWidget(line_edit)
+            row.addStretch()
+            layout.addLayout(row)
+        layout.addStretch()
         return widget
 
     def _build_deck_form(self):
         widget = QWidget()
-        layout = QFormLayout(widget)
-        layout.setLabelAlignment(Qt.AlignLeft)
-        layout.setHorizontalSpacing(18)
-        layout.setVerticalSpacing(10)
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(10)
         self.deck_field_inputs = {}
         for label_text in DECK_MEMBER_FIELDS:
+            row = QHBoxLayout()
+            row.setSpacing(18)
             label = QLabel(label_text)
             label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setFixedWidth(280)
             if label_text == "Ecm Multiplication Factor":
-                container = QWidget()
-                row = QHBoxLayout(container)
-                row.setContentsMargins(0, 0, 0, 0)
-                row.setSpacing(10)
                 self.deck_factor_combo = NoScrollComboBox()
                 self.deck_factor_combo.addItems(ECM_FACTOR_LABELS)
+                self.deck_factor_combo.setFixedWidth(242)
                 apply_field_style(self.deck_factor_combo)
                 self.deck_factor_combo.currentTextChanged.connect(self._on_factor_changed)
 
                 self.deck_factor_custom_input = QLineEdit()
                 apply_field_style(self.deck_factor_custom_input)
                 self.deck_factor_custom_input.setPlaceholderText("Custom factor")
+                self.deck_factor_custom_input.setFixedWidth(242)
                 self.deck_factor_custom_input.setVisible(False)
                 self.deck_factor_custom_input.setEnabled(False)
-                self.deck_factor_custom_input.setValidator(QDoubleValidator(0.1, 5.0, 3))
+                self.deck_factor_custom_input.setValidator(QDoubleValidator(0.1, 5.0, 1))
                 self.deck_factor_custom_input.textEdited.connect(self._handle_user_override)
 
+                row.addWidget(label)
                 row.addWidget(self.deck_factor_combo)
-                row.addWidget(self.deck_factor_custom_input)
-                layout.addRow(label, container)
+                row.addStretch()
+                
+                # Add custom input row (hidden by default)
+                custom_row = QHBoxLayout()
+                custom_row.setContentsMargins(0, 0, 0, 0)
+                custom_row.setSpacing(18)
+                custom_label = QLabel("")  # Empty label for alignment
+                custom_label.setFixedWidth(280)
+                custom_row.addWidget(custom_label)
+                custom_row.addWidget(self.deck_factor_custom_input)
+                custom_row.addStretch()
+                layout.addLayout(custom_row)
+                
                 self.deck_field_inputs[label_text] = self.deck_factor_combo
             else:
                 line_edit = QLineEdit()
+                line_edit.setFixedWidth(242)
                 apply_field_style(line_edit)
+                # Add validator for 1 decimal place
+                line_edit.setValidator(QDoubleValidator(0.0, 99999.0, 1))
                 line_edit.textEdited.connect(self._handle_user_override)
-                layout.addRow(label, line_edit)
+                row.addWidget(label)
+                row.addWidget(line_edit)
+                row.addStretch()
                 self.deck_field_inputs[label_text] = line_edit
+            layout.addLayout(row)
+        layout.addStretch()
         return widget
 
     def _initialize_member_data(self):
@@ -303,24 +367,24 @@ class MaterialPropertiesDialog(QDialog):
         grade_value = self._extract_numeric_grade(grade)
         defaults = STEEL_GRADE_BASE_VALUES.get(grade_value, STEEL_GRADE_BASE_VALUES[250])
         return {
-            "Ultimate Tensile Strength, Fu (MPa)": str(defaults["Fu"]),
-            "Yield Strength, Fy (MPa)": str(defaults["Fy"]),
-            "Modulus of Elasticity, E (GPa)": str(STEEL_MODULUS_E_GPA),
-            "Modulus of Rigidity, G (GPa)": str(STEEL_MODULUS_G_GPA),
-            "Poisson’s Ratio, ν": "{:.2f}".format(STEEL_POISSON_RATIO),
-            "Thermal Expansion Coefficient, (×10⁻⁶/°C)": str(STEEL_THERMAL_COEFF),
+            "Ultimate Tensile Strength, Fu (MPa)": "{:.1f}".format(defaults["Fu"]),
+            "Yield Strength, Fy (MPa)": "{:.1f}".format(defaults["Fy"]),
+            "Modulus of Elasticity, E (GPa)": "{:.1f}".format(STEEL_MODULUS_E_GPA),
+            "Modulus of Rigidity, G (GPa)": "{:.1f}".format(STEEL_MODULUS_G_GPA),
+            "Poisson's Ratio, ν": "{:.1f}".format(STEEL_POISSON_RATIO),
+            "Thermal Expansion Coefficient, (×10⁻⁶/°C)": "{:.1f}".format(STEEL_THERMAL_COEFF),
         }
 
     def _deck_defaults(self, grade, factor_value):
         strength = self._extract_numeric_grade(grade, default=25)
         fck = float(strength)
-        fctm = round(0.7 * math.sqrt(fck), 2)
-        ecm = round(5.0 * math.sqrt(fck) * factor_value, 2)
+        fctm = round(0.7 * math.sqrt(fck), 1)
+        ecm = round(5.0 * math.sqrt(fck) * factor_value, 1)
         return {
-            "Characteristic Compressive (Cube) Strength of Concrete, (fck)cu (MPa)": str(fck),
-            "Mean Tensile Strength of Concrete, fctm (MPa)": str(fctm),
-            "Secant Modulus of Elasticity of Concrete, Ecm (GPa)": str(ecm),
-            "Ecm Multiplication Factor": str(factor_value),
+            "Characteristic Compressive (Cube) Strength of Concrete, (fck)cu (MPa)": "{:.1f}".format(fck),
+            "Mean Tensile Strength of Concrete, fctm (MPa)": "{:.1f}".format(fctm),
+            "Secant Modulus of Elasticity of Concrete, Ecm (GPa)": "{:.1f}".format(ecm),
+            "Ecm Multiplication Factor": "{:.1f}".format(factor_value),
         }
 
     def _extract_numeric_grade(self, grade, default=250):
@@ -368,7 +432,13 @@ class MaterialPropertiesDialog(QDialog):
 
     def _populate_steel_fields(self, data):
         for label, widget in self.steel_field_inputs.items():
-            widget.setText(data["fields"].get(label, ""))
+            value = data["fields"].get(label, "")
+            # Format to 1 decimal place
+            try:
+                formatted_value = "{:.1f}".format(float(value))
+                widget.setText(formatted_value)
+            except (ValueError, TypeError):
+                widget.setText(value)
 
     def _populate_deck_fields(self, data):
         for label, widget in self.deck_field_inputs.items():
@@ -381,10 +451,21 @@ class MaterialPropertiesDialog(QDialog):
                 self.deck_factor_combo.blockSignals(False)
                 self._update_custom_factor_visibility(factor_label)
                 self.deck_factor_custom_input.blockSignals(True)
-                self.deck_factor_custom_input.setText(data.get("custom_factor", "1.0"))
+                custom_val = data.get("custom_factor", "1.0")
+                try:
+                    formatted_custom = "{:.1f}".format(float(custom_val))
+                    self.deck_factor_custom_input.setText(formatted_custom)
+                except (ValueError, TypeError):
+                    self.deck_factor_custom_input.setText(custom_val)
                 self.deck_factor_custom_input.blockSignals(False)
             else:
-                widget.setText(data["fields"].get(label, ""))
+                value = data["fields"].get(label, "")
+                # Format to 1 decimal place
+                try:
+                    formatted_value = "{:.1f}".format(float(value))
+                    widget.setText(formatted_value)
+                except (ValueError, TypeError):
+                    widget.setText(value)
 
     def _save_current_member_form(self):
         if not self.current_member:
@@ -399,7 +480,7 @@ class MaterialPropertiesDialog(QDialog):
                 else:
                     data["fields"][label] = widget.text()
             factor_value = self._factor_value_from_label(data["factor_label"], data.get("custom_factor"))
-            data["fields"]["Ecm Multiplication Factor"] = str(factor_value)
+            data["fields"]["Ecm Multiplication Factor"] = "{:.1f}".format(factor_value)
         else:
             for label, widget in self.steel_field_inputs.items():
                 data["fields"][label] = widget.text()
@@ -485,6 +566,7 @@ class MaterialPropertiesDialog(QDialog):
         is_custom = label == CUSTOM_ECM_FACTOR_LABEL
         self.deck_factor_custom_input.setVisible(is_custom)
         self.deck_factor_custom_input.setEnabled(is_custom)
+        self.deck_factor_combo.setVisible(not is_custom)
 
     def _on_material_changed(self, material):
         if self._loading:
@@ -546,7 +628,6 @@ class MaterialPropertiesDialog(QDialog):
         for member, data in self.member_data.items():
             if data.get("is_default"):
                 self._apply_defaults_for_member(member, update_ui=(member == self.current_member))
-
 def create_group_box(title):
     """Create a styled group box"""
     group_box = QGroupBox(title)
@@ -607,9 +688,15 @@ class InputDock(QWidget):
         self.structure_type_combo = None
         self.project_location_combo = None
         self.custom_location_input = None
+        self.include_median_combo = None
         self.footpath_combo = None
         self.additional_inputs_window = None
+        self.additional_inputs_widget = None
         self.material_dialog = None
+        self.additional_inputs_btn = None
+        self.lock_button = None
+        self.scroll_area = None
+        self.is_locked = False
 
         self.setStyleSheet("background: transparent;")
         self.main_layout = QHBoxLayout(self)
@@ -623,37 +710,6 @@ class InputDock(QWidget):
 
         self.build_left_panel(input_field_list)
         self.main_layout.addWidget(self.left_container)
-
-        # Toggle strip
-        self.toggle_strip = QWidget()
-        self.toggle_strip.setStyleSheet("background-color: #90AF13;")
-        self.toggle_strip.setFixedWidth(6)
-        toggle_layout = QVBoxLayout(self.toggle_strip)
-        toggle_layout.setContentsMargins(0, 0, 0, 0)
-        toggle_layout.setSpacing(0)
-        toggle_layout.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
-
-        self.toggle_btn = QPushButton("❮")
-        self.toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.toggle_btn.setFixedSize(6, 60)
-        self.toggle_btn.setToolTip("Hide panel")
-        self.toggle_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6c8408;
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 0px;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #5e7407;
-            }
-        """)
-        toggle_layout.addStretch()
-        toggle_layout.addWidget(self.toggle_btn)
-        toggle_layout.addStretch()
-        self.main_layout.addWidget(self.toggle_strip)
     def get_validator(self, validator):
         if validator == 'Int Validator':
             return QRegularExpressionValidator(QRegularExpression("^(0|[1-9]\\d*)(\\.\\d+)?$"))
@@ -1090,9 +1146,9 @@ class InputDock(QWidget):
         top_bar.addWidget(input_dock_btn)
         
         # Additional Inputs button with lock icon on the right
-        additional_inputs_btn = QPushButton("Additional Inputs")
-        additional_inputs_btn.setCursor(Qt.CursorShape.PointingHandCursor)        
-        additional_inputs_btn.setStyleSheet("""
+        self.additional_inputs_btn = QPushButton("Additional Inputs")
+        self.additional_inputs_btn.setCursor(Qt.CursorShape.PointingHandCursor)        
+        self.additional_inputs_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
                 color: black;
@@ -1114,33 +1170,23 @@ class InputDock(QWidget):
                 border: 1px solid black;
             }
         """)
-        additional_inputs_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        additional_inputs_btn.clicked.connect(self.show_additional_inputs)
-        top_bar.addWidget(additional_inputs_btn)           
+        self.additional_inputs_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.additional_inputs_btn.clicked.connect(self.show_additional_inputs)
+        top_bar.addWidget(self.additional_inputs_btn)           
 
         # Load the icon from resources
-        lock_button = QPushButton()
-        lock_button.setCursor(Qt.CursorShape.PointingHandCursor) 
-        lock_state = [1]  # Use list to make it mutable
-        lock_button.setIcon(QIcon(":/vectors/lock_close.svg"))
-        lock_button.setIconSize(QSize(30, 30))
-        lock_button.setStyleSheet("border: none;")
-        top_bar.addWidget(lock_button)
-
-        def toggle_lock():
-            if lock_state[0] == 0:
-                lock_state[0] = 1
-                lock_button.setIcon(QIcon(":/vectors/lock_close.svg"))
-            elif lock_state[0] == 1:
-                lock_state[0] = 0
-                lock_button.setIcon(QIcon(":/vectors/lock_open.svg"))
-                
-        lock_button.clicked.connect(toggle_lock)
+        self.lock_button = QPushButton()
+        self.lock_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.lock_button.setIconSize(QSize(30, 30))
+        self.lock_button.setStyleSheet("border: none;")
+        self.lock_button.clicked.connect(self._toggle_lock_state)
+        top_bar.addWidget(self.lock_button)
         
         panel_layout.addLayout(top_bar)
 
         # Scroll area
         scroll_area = QScrollArea()
+        self.scroll_area = scroll_area
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -1433,11 +1479,39 @@ class InputDock(QWidget):
         self.carriageway_input = QLineEdit()
         self.carriageway_input.setObjectName(KEY_CARRIAGEWAY_WIDTH)
         apply_field_style(self.carriageway_input)
-        self.carriageway_input.setValidator(QDoubleValidator(CARRIAGEWAY_WIDTH_MIN, 100.0, 2))
-        self.carriageway_input.setPlaceholderText(f"Min {CARRIAGEWAY_WIDTH_MIN} m")
+        self.carriageway_input.setValidator(QDoubleValidator(0.0, 100.0, 2))
+        self.carriageway_input.editingFinished.connect(self.validate_carriageway_width)
         carriageway_row.addWidget(carriageway_label)
         carriageway_row.addWidget(self.carriageway_input, 1)
         geo_box_layout.addLayout(carriageway_row)
+
+        # Include Median option
+        median_row = QHBoxLayout()
+        median_row.setContentsMargins(0, 0, 0, 0)
+        median_row.setSpacing(8)
+
+        median_label = QLabel("Include Median")
+        median_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        median_label.setMinimumWidth(110)
+        median_row.addWidget(median_label)
+
+        self.include_median_combo = NoScrollComboBox()
+        self.include_median_combo.addItems(["No", "Yes"])
+        self.include_median_combo.setCurrentIndex(0)
+        self.include_median_combo.setObjectName(KEY_INCLUDE_MEDIAN)
+        apply_field_style(self.include_median_combo)
+        #self.include_median_combo.setMaximumWidth(110)
+        self.include_median_combo.currentTextChanged.connect(self.on_include_median_changed)
+        median_row.addWidget(self.include_median_combo, 1)
+        median_row.addStretch()
+        geo_box_layout.addLayout(median_row)
+        self._update_carriageway_placeholder()
         
         # Footpath
         footpath_row = QHBoxLayout()
@@ -1777,19 +1851,13 @@ class InputDock(QWidget):
         h_scroll_area.setWidget(self.left_panel)
 
         left_layout.addWidget(h_scroll_area)
+        self._apply_lock_state()
     
     def show_additional_inputs(self):
         """Show Additional Inputs dialog"""
         footpath_value = self.footpath_combo.currentText() if self.footpath_combo else "None"
         
-        carriageway_width = 7.5
-        if self.input_widget:
-            carriageway_field = self.input_widget.findChild(QLineEdit, KEY_CARRIAGEWAY_WIDTH)
-            if carriageway_field and carriageway_field.text():
-                try:
-                    carriageway_width = float(carriageway_field.text())
-                except ValueError:
-                    carriageway_width = 7.5
+        carriageway_width = self._get_effective_carriageway_width()
         
         if self.additional_inputs_window is None or not self.additional_inputs_window.isVisible():
             self.additional_inputs_window = QDialog(self)
@@ -1801,17 +1869,114 @@ class InputDock(QWidget):
             
             self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, carriageway_width, self.additional_inputs_window)
             layout.addWidget(self.additional_inputs_widget)
+            self.additional_inputs_window.destroyed.connect(lambda _=None: self._handle_additional_inputs_closed())
+            self._set_additional_inputs_enabled(not self.is_locked)
             
             self.additional_inputs_window.show()
         else:
             self.additional_inputs_window.raise_()
             self.additional_inputs_window.activateWindow()
+            self._set_additional_inputs_enabled(not self.is_locked)
     
+    def _toggle_lock_state(self):
+        self.is_locked = not self.is_locked
+        self._apply_lock_state()
+
+    def _apply_lock_state(self):
+        if self.lock_button:
+            icon_path = ":/vectors/lock_close.svg" if self.is_locked else ":/vectors/lock_open.svg"
+            self.lock_button.setIcon(QIcon(icon_path))
+
+        enabled = not self.is_locked
+        if self.scroll_area:
+            self.scroll_area.setEnabled(enabled)
+        if self.input_widget:
+            self.input_widget.setEnabled(enabled)
+        self._set_additional_inputs_enabled(enabled)
+
+        if self.material_dialog:
+            self.material_dialog.setEnabled(enabled)
+
+    def _set_additional_inputs_enabled(self, enabled):
+        if self.additional_inputs_widget:
+            self.additional_inputs_widget.setEnabled(enabled)
+
+    def _handle_additional_inputs_closed(self):
+        self.additional_inputs_window = None
+        self.additional_inputs_widget = None
+
     def on_footpath_changed(self, footpath_value):
         """Update additional inputs when footpath changes"""
         if self.additional_inputs_window and self.additional_inputs_window.isVisible():
             if hasattr(self, 'additional_inputs_widget'):
                 self.additional_inputs_widget.update_footpath_value(footpath_value)
+
+    def on_include_median_changed(self, _value):
+        self._update_carriageway_placeholder()
+        # Re-validate silently so previously entered values honor the new limits
+        self.validate_carriageway_width(show_message=False)
+
+    def _carriageway_limits(self):
+        include_median = self._is_median_included()
+        min_width = CARRIAGEWAY_WIDTH_MIN_WITH_MEDIAN if include_median else CARRIAGEWAY_WIDTH_MIN
+        return min_width, CARRIAGEWAY_WIDTH_MAX_LIMIT
+
+    def _update_carriageway_placeholder(self):
+        if not hasattr(self, "carriageway_input") or self.carriageway_input is None:
+            return
+        min_width, max_width = self._carriageway_limits()
+        suffix = " per side" if self._is_median_included() else ""
+        self.carriageway_input.setPlaceholderText(f"{min_width:.2f} - {max_width:.1f} m{suffix}")
+
+    def validate_carriageway_width(self, show_message=True):
+        if not self.carriageway_input:
+            return
+        text = self.carriageway_input.text().strip()
+        if not text:
+            return
+        try:
+            value = float(text)
+        except ValueError:
+            self.carriageway_input.clear()
+            if show_message:
+                QMessageBox.warning(self, "Carriageway Width", "Please enter a numeric carriageway width.")
+            return
+
+        min_width, max_width = self._carriageway_limits()
+        include_median = self._is_median_included()
+        message = None
+
+        if value < min_width:
+            if include_median:
+                message = "IRC 5 Clause 104.3.1 requires minimum carriageway width on both sides of the median to be at least 7.5 m."
+            else:
+                message = "IRC 5 Clause 104.3.1 requires minimum carriageway width of 4.25 m."
+            value = min_width
+        elif value > max_width:
+            message = "Software limits carriageway width upto 23.6 m"
+            value = max_width
+
+        self.carriageway_input.setText(f"{value:.2f}")
+        if message and show_message:
+            QMessageBox.warning(self, "Carriageway Width", message)
+
+    def _get_effective_carriageway_width(self):
+        min_width, max_width = self._carriageway_limits()
+        width = min_width
+        if self.carriageway_input and self.carriageway_input.text():
+            try:
+                width = float(self.carriageway_input.text())
+            except ValueError:
+                width = min_width
+        width = max(min_width, min(width, max_width))
+        if self._is_median_included():
+            return width * 2.0  # Two carriageways, one on each side of the median
+        return width
+
+    def _is_median_included(self):
+        if not self.include_median_combo:
+            return False
+        return self.include_median_combo.currentText().lower() == "yes"
 
     def show_material_properties_dialog(self):
         """Open the material properties dialog with the relevant member selected."""

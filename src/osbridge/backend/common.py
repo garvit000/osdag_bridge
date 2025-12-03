@@ -12,6 +12,7 @@ KEY_STRUCTURE_TYPE = "Structure Type"
 KEY_PROJECT_LOCATION = "Project Location"
 KEY_SPAN = "Span"
 KEY_CARRIAGEWAY_WIDTH = "Carriageway Width"
+KEY_INCLUDE_MEDIAN = "Include Median"
 KEY_FOOTPATH = "Footpath"
 KEY_SKEW_ANGLE = "Skew Angle"
 KEY_GIRDER = "Girder"
@@ -79,8 +80,10 @@ VALUES_MATERIAL = [
 SPAN_MIN = 20.0
 SPAN_MAX = 45.0
 
-# Carriageway Width: Minimum 4.25 m as per IRC 5 Clause 104.3.1
-CARRIAGEWAY_WIDTH_MIN = 4.25
+# Carriageway Width limits per IRC 5 Clause 104.3.1
+CARRIAGEWAY_WIDTH_MIN = 4.25  # No median present
+CARRIAGEWAY_WIDTH_MIN_WITH_MEDIAN = 7.5  # Each carriageway when median provided
+CARRIAGEWAY_WIDTH_MAX_LIMIT = 23.6  # Current software cap (subject to change)
 
 # Skew Angle: IRC 24 (2010) requires detailed analysis when skew angle exceeds ±15 degrees
 # Default: 0 degrees
@@ -90,7 +93,7 @@ SKEW_ANGLE_DEFAULT = 0.0
 
 # ===== Additional Inputs Constants =====
 
-# Bridge Geometry Keys
+# Typical Section Details Keys
 KEY_GIRDER_SPACING = "Girder Spacing"
 KEY_DECK_OVERHANG = "Deck Overhang Width"
 KEY_NO_OF_GIRDERS = "No. of Girders"
@@ -185,7 +188,17 @@ VALUES_DECK_CONCRETE_GRADE = [
 ]
 VALUES_REINF_MATERIAL = ["Fe 415", "Fe 500", "Fe 550"]
 VALUES_REINF_SIZE = ["8", "10", "12", "16", "20", "25", "32"]
-VALUES_CRASH_BARRIER_TYPE = ["Rigid", "Semi-Rigid", "Flexible", "Other"]
+VALUES_CRASH_BARRIER_TYPE = [
+    "IRC 5 - RCC Crash Barrier",
+    "IRC 5 - Steel Crash Barrier",
+    "IRC 5 - Metal Beam",
+    "Custom"
+]
+VALUES_MEDIAN_TYPE = [
+    "IRC 5 - Raised Kerb",
+    "IRC 5 - Flush Median",
+    "Custom"
+]
 VALUES_GIRDER_TYPE = ["IS Standard Rolled Beam", "Plate Girder"]
 VALUES_GIRDER_SYMMETRY = ["Symmetrical", "Unsymmetrical"]
 VALUES_OPTIMIZATION_MODE = ["Optimized", "Customized", "All"]
@@ -196,6 +209,11 @@ VALUES_STIFFENER_DESIGN = ["Simple Post", "Tension Field"]
 VALUES_CROSS_BRACING_TYPE = ["K-bracing", "K-bracing with top bracket", "X-bracing", "X-bracing with bottom bracket", "X-bracing with top and bottom brackets"]
 VALUES_END_DIAPHRAGM_TYPE = ["Same as cross-bracing", "Rolled Beam Section", "Plate Girder Section"]
 VALUES_WEARING_COAT_MATERIAL = ["Concrete", "Bituminous", "Other"]
+VALUES_RAILING_TYPE = [
+    "IRC 5 - RCC Railing",
+    "IRC 5 - Steel Railing",
+    "Custom"
+]
 VALUES_CUSTOM_AXLE_TYPE = ["Single", "Bogie"]
 VALUES_FOOTPATH_PRESSURE_MODE = ["Automatic", "User-defined"]
 VALUES_SUPPORT_TYPE = ["Fixed", "Pinned"]
@@ -206,7 +224,7 @@ DEFAULT_CONCRETE_DENSITY = 25.0  # kN/m³
 DEFAULT_STEEL_DENSITY = 78.5  # kN/m³
 DEFAULT_BEARING_LENGTH = 0.0  # mm
 
-# Bridge Geometry Validation Constants (IRC 5)
+# Typical Section Details Validation Constants (IRC 5)
 MIN_FOOTPATH_WIDTH = 1.5  # meters (IRC 5 Clause 104.3.6)
 MIN_RAILING_HEIGHT = 1.0  # meters (IRC 5 Clauses 109.7.2.3 & 109.7.2.4)
 MIN_SAFETY_KERB_WIDTH = 0.75  # meters (IRC 5 Clause 101.41)
