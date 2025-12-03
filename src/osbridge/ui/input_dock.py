@@ -1,8 +1,10 @@
 import sys
 import os
+import math
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
-    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog, QDialog, QCheckBox, QFrame
+    QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog, QDialog, QCheckBox, QFrame,
+    QDialogButtonBox, QStackedWidget
 )
 from PySide6.QtCore import Qt, QRegularExpression, QSize
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator, QIcon
@@ -10,6 +12,51 @@ from PySide6.QtSvgWidgets import *
 from osbridge.backend.common import *
 from osbridge.ui.additional_inputs import AdditionalInputsWidget
 from osbridge.ui.custom_buttons import DockCustomButton
+
+
+STEEL_MEMBER_FIELDS = [
+    "Ultimate Tensile Strength, Fu (MPa)",
+    "Yield Strength, Fy (MPa)",
+    "Modulus of Elasticity, E (GPa)",
+    "Modulus of Rigidity, G (GPa)",
+    "Poisson’s Ratio, ν",
+    "Thermal Expansion Coefficient, (×10⁻⁶/°C)",
+]
+
+DECK_MEMBER_FIELDS = [
+    "Characteristic Compressive (Cube) Strength of Concrete, (fck)cu (MPa)",
+    "Mean Tensile Strength of Concrete, fctm (MPa)",
+    "Secant Modulus of Elasticity of Concrete, Ecm (GPa)",
+    "Ecm Multiplication Factor",
+]
+
+STEEL_MODULUS_E_GPA = 200.0
+STEEL_MODULUS_G_GPA = 77.0
+STEEL_POISSON_RATIO = 0.30
+STEEL_THERMAL_COEFF = 11.7
+
+STEEL_GRADE_BASE_VALUES = {
+    250: {"Fy": 250, "Fu": 410},
+    275: {"Fy": 275, "Fu": 430},
+    300: {"Fy": 300, "Fu": 440},
+    350: {"Fy": 350, "Fu": 490},
+    410: {"Fy": 410, "Fu": 540},
+    450: {"Fy": 450, "Fu": 570},
+    550: {"Fy": 550, "Fu": 650},
+    600: {"Fy": 600, "Fu": 700},
+    650: {"Fy": 650, "Fu": 750},
+}
+
+ECM_FACTOR_OPTIONS = [
+    ("Quartzite/granite aggregates = 1", 1.0),
+    ("Limestone aggregates = 0.9", 0.9),
+    ("Sandstone aggregates = 0.7", 0.7),
+    ("Basalt aggregates = 1.2", 1.2),
+    ("Custom", None),
+]
+ECM_FACTOR_LABELS = [text for text, _ in ECM_FACTOR_OPTIONS]
+DEFAULT_ECM_FACTOR_LABEL = ECM_FACTOR_OPTIONS[0][0]
+CUSTOM_ECM_FACTOR_LABEL = "Custom"
 
 
 class NoScrollComboBox(QComboBox):
@@ -88,6 +135,418 @@ def apply_field_style(widget):
             }
         """)
 
+
+class MaterialPropertiesDialog(QDialog):
+    MEMBER_OPTIONS = ["Girder", "Cross Bracing", "End Diaphragm", "Deck"]
+    STEEL_MEMBERS = {"Girder", "Cross Bracing", "End Diaphragm"}
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Material Properties")
+        self.setMinimumWidth(580)
+        self.setStyleSheet("background-color: white;")
+
+        self.parent_dock = parent
+        self._loading = False
+        self.current_member = None
+        self.member_data = {}
+
+        self.member_combo = NoScrollComboBox()
+        self.member_combo.addItems(self.MEMBER_OPTIONS)
+        apply_field_style(self.member_combo)
+
+        self.material_combo = NoScrollComboBox()
+        apply_field_style(self.material_combo)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(20, 16, 20, 16)
+        main_layout.setSpacing(14)
+
+        header = QLabel("Material Inputs")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #1d1d1d;")
+        main_layout.addWidget(header)
+
+        combo_row = QFormLayout()
+        combo_row.setHorizontalSpacing(18)
+        combo_row.setVerticalSpacing(10)
+        combo_row.setLabelAlignment(Qt.AlignLeft)
+        combo_row.addRow("Member*:", self.member_combo)
+        combo_row.addRow("Material*:", self.material_combo)
+        main_layout.addLayout(combo_row)
+
+        self.stack = QStackedWidget()
+        self.steel_page = self._build_steel_form()
+        self.deck_page = self._build_deck_form()
+        self.stack.addWidget(self.steel_page)
+        self.stack.addWidget(self.deck_page)
+        main_layout.addWidget(self.stack)
+
+        default_row = QHBoxLayout()
+        default_row.setContentsMargins(0, 0, 0, 0)
+        default_row.setSpacing(8)
+        default_label = QLabel("Default")
+        default_label.setStyleSheet("font-size: 12px; color: #1d1d1d;")
+        self.default_checkbox = QCheckBox()
+        self.default_checkbox.setStyleSheet(
+            """
+            QCheckBox {
+                spacing: 6px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                background: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #90AF13;
+                border-color: #90AF13;
+            }
+            """
+        )
+        default_row.addWidget(default_label)
+        default_row.addWidget(self.default_checkbox)
+        default_row.addStretch()
+        main_layout.addLayout(default_row)
+
+        self.member_combo.currentTextChanged.connect(self._on_member_changed)
+        self.material_combo.currentTextChanged.connect(self._on_material_changed)
+        self.default_checkbox.stateChanged.connect(self._on_default_toggled)
+
+        self._initialize_member_data()
+        self._on_member_changed(self.member_combo.currentText())
+
+    def closeEvent(self, event):
+        self._save_current_member_form()
+        super().closeEvent(event)
+
+    def _build_steel_form(self):
+        widget = QWidget()
+        layout = QFormLayout(widget)
+        layout.setLabelAlignment(Qt.AlignLeft)
+        layout.setHorizontalSpacing(18)
+        layout.setVerticalSpacing(10)
+        self.steel_field_inputs = {}
+        for label_text in STEEL_MEMBER_FIELDS:
+            label = QLabel(label_text)
+            label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+            line_edit = QLineEdit()
+            apply_field_style(line_edit)
+            line_edit.textEdited.connect(self._handle_user_override)
+            self.steel_field_inputs[label_text] = line_edit
+            layout.addRow(label, line_edit)
+        return widget
+
+    def _build_deck_form(self):
+        widget = QWidget()
+        layout = QFormLayout(widget)
+        layout.setLabelAlignment(Qt.AlignLeft)
+        layout.setHorizontalSpacing(18)
+        layout.setVerticalSpacing(10)
+        self.deck_field_inputs = {}
+        for label_text in DECK_MEMBER_FIELDS:
+            label = QLabel(label_text)
+            label.setStyleSheet("font-size: 12px; color: #2d2d2d;")
+            if label_text == "Ecm Multiplication Factor":
+                container = QWidget()
+                row = QHBoxLayout(container)
+                row.setContentsMargins(0, 0, 0, 0)
+                row.setSpacing(10)
+                self.deck_factor_combo = NoScrollComboBox()
+                self.deck_factor_combo.addItems(ECM_FACTOR_LABELS)
+                apply_field_style(self.deck_factor_combo)
+                self.deck_factor_combo.currentTextChanged.connect(self._on_factor_changed)
+
+                self.deck_factor_custom_input = QLineEdit()
+                apply_field_style(self.deck_factor_custom_input)
+                self.deck_factor_custom_input.setPlaceholderText("Custom factor")
+                self.deck_factor_custom_input.setVisible(False)
+                self.deck_factor_custom_input.setEnabled(False)
+                self.deck_factor_custom_input.setValidator(QDoubleValidator(0.1, 5.0, 3))
+                self.deck_factor_custom_input.textEdited.connect(self._handle_user_override)
+
+                row.addWidget(self.deck_factor_combo)
+                row.addWidget(self.deck_factor_custom_input)
+                layout.addRow(label, container)
+                self.deck_field_inputs[label_text] = self.deck_factor_combo
+            else:
+                line_edit = QLineEdit()
+                apply_field_style(line_edit)
+                line_edit.textEdited.connect(self._handle_user_override)
+                layout.addRow(label, line_edit)
+                self.deck_field_inputs[label_text] = line_edit
+        return widget
+
+    def _initialize_member_data(self):
+        for member in self.MEMBER_OPTIONS:
+            material = self._get_parent_grade(member)
+            fields = self._default_fields_for_member(member, material)
+            self.member_data[member] = {
+                "material": material,
+                "fields": fields,
+                "is_default": True,
+                "factor_label": DEFAULT_ECM_FACTOR_LABEL if member == "Deck" else None,
+                "custom_factor": "1.0" if member == "Deck" else None,
+            }
+
+    def _default_fields_for_member(self, member, material=None, factor_label=None, custom_factor=None):
+        if member == "Deck":
+            grade = material or self._get_parent_grade(member) or (VALUES_DECK_CONCRETE_GRADE[0] if VALUES_DECK_CONCRETE_GRADE else "")
+            factor_label = factor_label or DEFAULT_ECM_FACTOR_LABEL
+            factor_value = self._factor_value_from_label(factor_label, custom_factor)
+            return self._deck_defaults(grade, factor_value)
+        grade = material or self._get_parent_grade(member) or (VALUES_MATERIAL[0] if VALUES_MATERIAL else "")
+        return self._steel_defaults(grade)
+
+    def _steel_defaults(self, grade):
+        grade_value = self._extract_numeric_grade(grade)
+        defaults = STEEL_GRADE_BASE_VALUES.get(grade_value, STEEL_GRADE_BASE_VALUES[250])
+        return {
+            "Ultimate Tensile Strength, Fu (MPa)": str(defaults["Fu"]),
+            "Yield Strength, Fy (MPa)": str(defaults["Fy"]),
+            "Modulus of Elasticity, E (GPa)": str(STEEL_MODULUS_E_GPA),
+            "Modulus of Rigidity, G (GPa)": str(STEEL_MODULUS_G_GPA),
+            "Poisson’s Ratio, ν": "{:.2f}".format(STEEL_POISSON_RATIO),
+            "Thermal Expansion Coefficient, (×10⁻⁶/°C)": str(STEEL_THERMAL_COEFF),
+        }
+
+    def _deck_defaults(self, grade, factor_value):
+        strength = self._extract_numeric_grade(grade, default=25)
+        fck = float(strength)
+        fctm = round(0.7 * math.sqrt(fck), 2)
+        ecm = round(5.0 * math.sqrt(fck) * factor_value, 2)
+        return {
+            "Characteristic Compressive (Cube) Strength of Concrete, (fck)cu (MPa)": str(fck),
+            "Mean Tensile Strength of Concrete, fctm (MPa)": str(fctm),
+            "Secant Modulus of Elasticity of Concrete, Ecm (GPa)": str(ecm),
+            "Ecm Multiplication Factor": str(factor_value),
+        }
+
+    def _extract_numeric_grade(self, grade, default=250):
+        digits = ''.join(ch for ch in grade if ch.isdigit())
+        try:
+            return int(digits) if digits else default
+        except ValueError:
+            return default
+
+    def _materials_for_member(self, member):
+        return VALUES_DECK_CONCRETE_GRADE if member == "Deck" else VALUES_MATERIAL
+
+    def _on_member_changed(self, member):
+        if self.current_member:
+            self._save_current_member_form()
+
+        self.current_member = member
+        is_deck = member == "Deck"
+        self.stack.setCurrentWidget(self.deck_page if is_deck else self.steel_page)
+
+        data = self.member_data.get(member)
+        if not data:
+            self.member_data[member] = self._create_default_entry(member)
+            data = self.member_data[member]
+
+        if data.get("is_default"):
+            self._apply_defaults_for_member(member, update_ui=False)
+
+        materials = self._materials_for_member(member)
+        self._loading = True
+        self.material_combo.clear()
+        self.material_combo.addItems(materials)
+        if data["material"] in materials:
+            self.material_combo.setCurrentText(data["material"])
+        elif materials:
+            self.material_combo.setCurrentIndex(0)
+            data["material"] = self.material_combo.currentText()
+
+        self.default_checkbox.setChecked(data.get("is_default", False))
+        if is_deck:
+            self._populate_deck_fields(data)
+        else:
+            self._populate_steel_fields(data)
+        self._loading = False
+
+    def _populate_steel_fields(self, data):
+        for label, widget in self.steel_field_inputs.items():
+            widget.setText(data["fields"].get(label, ""))
+
+    def _populate_deck_fields(self, data):
+        for label, widget in self.deck_field_inputs.items():
+            if label == "Ecm Multiplication Factor":
+                factor_label = data.get("factor_label", DEFAULT_ECM_FACTOR_LABEL)
+                if factor_label not in ECM_FACTOR_LABELS:
+                    factor_label = DEFAULT_ECM_FACTOR_LABEL
+                self.deck_factor_combo.blockSignals(True)
+                self.deck_factor_combo.setCurrentText(factor_label)
+                self.deck_factor_combo.blockSignals(False)
+                self._update_custom_factor_visibility(factor_label)
+                self.deck_factor_custom_input.blockSignals(True)
+                self.deck_factor_custom_input.setText(data.get("custom_factor", "1.0"))
+                self.deck_factor_custom_input.blockSignals(False)
+            else:
+                widget.setText(data["fields"].get(label, ""))
+
+    def _save_current_member_form(self):
+        if not self.current_member:
+            return
+        data = self.member_data.setdefault(self.current_member, self._create_default_entry(self.current_member))
+        data["material"] = self.material_combo.currentText()
+        if self.current_member == "Deck":
+            for label, widget in self.deck_field_inputs.items():
+                if label == "Ecm Multiplication Factor":
+                    data["factor_label"] = self.deck_factor_combo.currentText()
+                    data["custom_factor"] = self.deck_factor_custom_input.text() or "1.0"
+                else:
+                    data["fields"][label] = widget.text()
+            factor_value = self._factor_value_from_label(data["factor_label"], data.get("custom_factor"))
+            data["fields"]["Ecm Multiplication Factor"] = str(factor_value)
+        else:
+            for label, widget in self.steel_field_inputs.items():
+                data["fields"][label] = widget.text()
+        data["is_default"] = self.default_checkbox.isChecked()
+
+    def _create_default_entry(self, member):
+        material = self._get_parent_grade(member)
+        return {
+            "material": material,
+            "fields": self._default_fields_for_member(member, material),
+            "is_default": True,
+            "factor_label": DEFAULT_ECM_FACTOR_LABEL if member == "Deck" else None,
+            "custom_factor": "1.0" if member == "Deck" else None,
+        }
+
+    def _apply_defaults_for_member(self, member, update_ui=True):
+        data = self.member_data.setdefault(member, self._create_default_entry(member))
+        grade = self._get_parent_grade(member) or data.get("material")
+        materials = self._materials_for_member(member)
+        if grade not in materials and materials:
+            grade = materials[0]
+        data["material"] = grade
+        if member == "Deck":
+            data["factor_label"] = DEFAULT_ECM_FACTOR_LABEL
+            data["custom_factor"] = "1.0"
+            factor_value = self._factor_value_from_label(DEFAULT_ECM_FACTOR_LABEL)
+            data["fields"] = self._deck_defaults(grade, factor_value)
+        else:
+            data["fields"] = self._steel_defaults(grade)
+        data["is_default"] = True
+
+        if update_ui and member == self.current_member:
+            self._loading = True
+            self.material_combo.setCurrentText(grade)
+            if member == "Deck":
+                self._populate_deck_fields(data)
+            else:
+                self._populate_steel_fields(data)
+            self.default_checkbox.setChecked(True)
+            self._loading = False
+
+    def _factor_value_from_label(self, label, custom_factor=None):
+        for text, value in ECM_FACTOR_OPTIONS:
+            if text == label:
+                if value is None:
+                    try:
+                        return float(custom_factor) if custom_factor else 1.0
+                    except ValueError:
+                        return 1.0
+                return value
+        return 1.0
+
+    def _reset_current_member_to_defaults(self):
+        if not self.current_member:
+            return
+
+        self._apply_defaults_for_member(self.current_member, update_ui=False)
+        data = self.member_data.get(self.current_member)
+        if not data:
+            return
+
+        target_material = data.get("material", "")
+        self._loading = True
+        if target_material:
+            index = self.material_combo.findText(target_material)
+            if index >= 0:
+                self.material_combo.setCurrentIndex(index)
+            elif self.material_combo.count() > 0:
+                self.material_combo.setCurrentIndex(0)
+                data["material"] = self.material_combo.currentText()
+        if self.current_member == "Deck":
+            self._populate_deck_fields(data)
+        else:
+            self._populate_steel_fields(data)
+        self._loading = False
+
+        self.default_checkbox.blockSignals(True)
+        self.default_checkbox.setChecked(True)
+        self.default_checkbox.blockSignals(False)
+        self._save_current_member_form()
+
+    def _update_custom_factor_visibility(self, label):
+        is_custom = label == CUSTOM_ECM_FACTOR_LABEL
+        self.deck_factor_custom_input.setVisible(is_custom)
+        self.deck_factor_custom_input.setEnabled(is_custom)
+
+    def _on_material_changed(self, material):
+        if self._loading:
+            return
+        data = self.member_data.get(self.current_member)
+        if data:
+            data["material"] = material
+        self._handle_user_override()
+
+    def _on_default_toggled(self, state):
+        if self._loading:
+            return
+        try:
+            check_state = Qt.CheckState(state)
+        except ValueError:
+            check_state = Qt.CheckState.Checked if bool(state) else Qt.CheckState.Unchecked
+        if check_state == Qt.CheckState.Checked:
+            self._reset_current_member_to_defaults()
+        else:
+            data = self.member_data.get(self.current_member)
+            if data:
+                data["is_default"] = False
+
+    def _on_factor_changed(self, label):
+        self._update_custom_factor_visibility(label)
+        self._handle_user_override()
+
+    def _handle_user_override(self):
+        if self._loading:
+            return
+        if self.default_checkbox.isChecked():
+            self._loading = True
+            self.default_checkbox.setChecked(False)
+            self._loading = False
+        data = self.member_data.get(self.current_member)
+        if data:
+            data["is_default"] = False
+        self._save_current_member_form()
+
+    def _get_parent_grade(self, member):
+        parent = self.parent_dock
+        if not parent:
+            return ""
+        mapping = {
+            "Girder": getattr(parent, "girder_combo", None),
+            "Cross Bracing": getattr(parent, "cross_bracing_combo", None),
+            "End Diaphragm": getattr(parent, "end_diaphragm_combo", None),
+            "Deck": getattr(parent, "deck_combo", None),
+        }
+        combo = mapping.get(member)
+        return combo.currentText() if combo else ""
+
+    def set_member(self, member):
+        index = self.member_combo.findText(member)
+        if index >= 0:
+            self.member_combo.setCurrentIndex(index)
+
+    def sync_with_parent_defaults(self):
+        for member, data in self.member_data.items():
+            if data.get("is_default"):
+                self._apply_defaults_for_member(member, update_ui=(member == self.current_member))
+
 def create_group_box(title):
     """Create a styled group box"""
     group_box = QGroupBox(title)
@@ -150,6 +609,7 @@ class InputDock(QWidget):
         self.custom_location_input = None
         self.footpath_combo = None
         self.additional_inputs_window = None
+        self.material_dialog = None
 
         self.setStyleSheet("background: transparent;")
         self.main_layout = QHBoxLayout(self)
@@ -194,7 +654,6 @@ class InputDock(QWidget):
         toggle_layout.addWidget(self.toggle_btn)
         toggle_layout.addStretch()
         self.main_layout.addWidget(self.toggle_strip)
-
     def get_validator(self, validator):
         if validator == 'Int Validator':
             return QRegularExpressionValidator(QRegularExpression("^(0|[1-9]\\d*)(\\.\\d+)?$"))
@@ -1122,6 +1581,25 @@ class InputDock(QWidget):
         cross_bracing_row.addWidget(cross_bracing_label)
         cross_bracing_row.addWidget(self.cross_bracing_combo, 1)
         material_box_layout.addLayout(cross_bracing_row)
+
+        # End Diaphragm
+        end_diaphragm_row = QHBoxLayout()
+        end_diaphragm_label = QLabel("End Diaphragm")
+        end_diaphragm_label.setStyleSheet("""
+            QLabel {
+                color: #000000;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        end_diaphragm_label.setMinimumWidth(110)
+        self.end_diaphragm_combo = NoScrollComboBox()
+        self.end_diaphragm_combo.setObjectName(KEY_END_DIAPHRAGM)
+        apply_field_style(self.end_diaphragm_combo)
+        self.end_diaphragm_combo.addItems(VALUES_MATERIAL)
+        end_diaphragm_row.addWidget(end_diaphragm_label)
+        end_diaphragm_row.addWidget(self.end_diaphragm_combo, 1)
+        material_box_layout.addLayout(end_diaphragm_row)
         
         # Deck
         deck_row = QHBoxLayout()
@@ -1138,14 +1616,14 @@ class InputDock(QWidget):
         self.deck_combo.setObjectName(KEY_DECK_CONCRETE_GRADE_BASIC)
         apply_field_style(self.deck_combo)
         self.deck_combo.addItems(VALUES_DECK_CONCRETE_GRADE)
-        self.deck_combo.setCurrentText("M25")
+        self.deck_combo.setCurrentText("M 25")
         deck_row.addWidget(deck_label)
         deck_row.addWidget(self.deck_combo, 1)
         material_box_layout.addLayout(deck_row)
 
         # Material Properties header with button
         mat_prop_header = QHBoxLayout()
-        mat_prop_title = QLabel("Modify Properties")
+        mat_prop_title = QLabel("Properties")
         mat_prop_title.setStyleSheet("""
             QLabel {
                 color: #000000;
@@ -1173,6 +1651,7 @@ class InputDock(QWidget):
                 background-color: #7a9a12;
             }
         """)
+        modify_mat_btn.clicked.connect(self.show_material_properties_dialog)
         mat_prop_header.addWidget(modify_mat_btn, 1)
         material_box_layout.addLayout(mat_prop_header)
         
@@ -1333,3 +1812,27 @@ class InputDock(QWidget):
         if self.additional_inputs_window and self.additional_inputs_window.isVisible():
             if hasattr(self, 'additional_inputs_widget'):
                 self.additional_inputs_widget.update_footpath_value(footpath_value)
+
+    def show_material_properties_dialog(self):
+        """Open the material properties dialog with the relevant member selected."""
+        if self.material_dialog is None:
+            self.material_dialog = MaterialPropertiesDialog(self)
+
+        member = "Girder"
+        focus_widget = QApplication.focusWidget()
+        focus_map = {
+            getattr(self, 'girder_combo', None): "Girder",
+            getattr(self, 'deck_combo', None): "Deck",
+            getattr(self, 'cross_bracing_combo', None): "Cross Bracing",
+            getattr(self, 'end_diaphragm_combo', None): "End Diaphragm",
+        }
+        for widget, name in focus_map.items():
+            if widget is not None and widget is focus_widget:
+                member = name
+                break
+
+        self.material_dialog.sync_with_parent_defaults()
+        self.material_dialog.set_member(member)
+        self.material_dialog.show()
+        self.material_dialog.raise_()
+        self.material_dialog.activateWindow()

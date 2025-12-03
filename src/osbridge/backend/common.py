@@ -16,6 +16,7 @@ KEY_FOOTPATH = "Footpath"
 KEY_SKEW_ANGLE = "Skew Angle"
 KEY_GIRDER = "Girder"
 KEY_CROSS_BRACING = "Cross Bracing"
+KEY_END_DIAPHRAGM = "End Diaphragm"
 KEY_DECK = "Deck"
 KEY_DECK_CONCRETE_GRADE_BASIC = "Deck Concrete Grade"
 
@@ -33,6 +34,7 @@ KEY_DISP_SKEW_ANGLE = "Skew Angle (degrees) [±15]"
 DISP_TITLE_MATERIAL = "Material Inputs"
 KEY_DISP_GIRDER = "Girder"
 KEY_DISP_CROSS_BRACING = "Cross Bracing"
+KEY_DISP_END_DIAPHRAGM = "End Diaphragm"
 KEY_DISP_DECK = "Deck"
 KEY_DISP_DECK_CONCRETE_GRADE = "Deck Concrete Grade [M25+]"
 
@@ -60,7 +62,17 @@ VALUES_PROJECT_LOCATION = [
 # Note: IRC 5 Clause 101.41 requires safety kerb when footpath is not present
 VALUES_FOOTPATH = ["None", "Single Sided", "Both"]
 
-VALUES_MATERIAL = ["E250 (Fe 410W)A", "E300 (Fe 440)", "E350 (Fe 490)", "E410 (Fe 540)", "E450 (Fe 570)", "E550 (Fe 650)"]
+VALUES_MATERIAL = [
+    "E 250A", "E 250BR", "E 250B0", "E 250C",
+    "E 275A", "E 275BR", "E 275B0", "E 275C",
+    "E 300A", "E 300BR", "E 300B0", "E 300C",
+    "E 350A", "E 350BR", "E 350B0", "E 350C",
+    "E 410A", "E 410BR", "E 410B0", "E 410C",
+    "E 450A", "E 450BR",
+    "E 550A", "E 550BR",
+    "E 600A", "E 600BR",
+    "E 650A", "E 650BR"
+]
 
 # Validation limits
 # Span: Between 20 to 45 meters
@@ -166,7 +178,11 @@ KEY_BEARING_LENGTH = "Bearing Length"
 
 # Value Lists for Additional Inputs
 VALUES_YES_NO = ["No", "Yes"]
-VALUES_DECK_CONCRETE_GRADE = ["M25", "M30", "M35", "M40", "M45", "M50", "M55", "M60"]
+VALUES_DECK_CONCRETE_GRADE = [
+    "M 25", "M 30", "M 35", "M 40", "M 45", "M 50",
+    "M 55", "M 60", "M 65", "M 70", "M 75", "M 80",
+    "M 85", "M 90"
+]
 VALUES_REINF_MATERIAL = ["Fe 415", "Fe 500", "Fe 550"]
 VALUES_REINF_SIZE = ["8", "10", "12", "16", "20", "25", "32"]
 VALUES_CRASH_BARRIER_TYPE = ["Rigid", "Semi-Rigid", "Flexible", "Other"]
