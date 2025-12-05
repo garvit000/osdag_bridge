@@ -2505,11 +2505,11 @@ class LoadingTab(QWidget):
 
         self.load_tabs.addTab(self._build_permanent_load_tab(), "Permanent Load")
         self.load_tabs.addTab(self._build_live_load_tab(), "Live Load")
-        self.load_tabs.addTab(self._create_placeholder_page("Seismic Load"), "Seismic Load")
-        self.load_tabs.addTab(self._create_placeholder_page("Wind Load"), "Wind Load")
-        self.load_tabs.addTab(self._create_placeholder_page("Temperature Load"), "Temperature Load")
+        self.load_tabs.addTab(self._build_seismic_load_tab(), "Seismic Load")
+        self.load_tabs.addTab(self._build_wind_load_tab(), "Wind Load")
+        self.load_tabs.addTab(self._build_temperature_load_tab(), "Temperature Load")
         self.load_tabs.addTab(self._create_placeholder_page("Custom Load"), "Custom Load")
-        self.load_tabs.addTab(self._create_placeholder_page("Load Combination"), "Load Combination")
+        self.load_tabs.addTab(self._build_load_combination_tab(), "Load Combination")
         main_layout.addWidget(self.load_tabs)
 
         action_bar, self.defaults_button, self.save_button = create_action_button_bar()
@@ -2741,6 +2741,229 @@ class LoadingTab(QWidget):
 
         return page
 
+    def _build_seismic_load_tab(self):
+        """Build the Seismic/Earthquake Load tab matching reference design"""
+        page = QWidget()
+        page.setStyleSheet("background-color: #f5f5f5;")
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(12, 12, 12, 12)
+        page_layout.setSpacing(12)
+
+        content_row = QHBoxLayout()
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(16)
+
+        # Left card with inputs
+        left_card = self._create_card()
+        left_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        left_layout = QVBoxLayout(left_card)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(12)
+
+        # Title
+        title = QLabel("Seismic/Earthquake Load (EL) Inputs for Evaluation per IRC 6")
+        title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        left_layout.addWidget(title)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+        field_width = 120
+
+        # ===== Seismic Inputs Box =====
+        seismic_inputs_box = QFrame()
+        seismic_inputs_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        seismic_inputs_layout = QGridLayout(seismic_inputs_box)
+        seismic_inputs_layout.setContentsMargins(12, 12, 12, 12)
+        seismic_inputs_layout.setHorizontalSpacing(12)
+        seismic_inputs_layout.setVerticalSpacing(10)
+        seismic_inputs_layout.setColumnMinimumWidth(0, 200)
+
+        row = 0
+
+        # Seismic Zone
+        lbl = QLabel("Seismic Zone:")
+        lbl.setStyleSheet(label_style)
+        self.seismic_zone_combo = QComboBox()
+        self.seismic_zone_combo.addItems(["II", "III", "IV", "V"])
+        self.seismic_zone_combo.setFixedWidth(field_width)
+        apply_field_style(self.seismic_zone_combo)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.seismic_zone_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Importance Factor
+        lbl = QLabel("Importance Factor:")
+        lbl.setStyleSheet(label_style)
+        self.importance_factor_input = QLineEdit()
+        self.importance_factor_input.setText("1")
+        self.importance_factor_input.setFixedWidth(field_width)
+        apply_field_style(self.importance_factor_input)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.importance_factor_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Type of Soil
+        lbl = QLabel("Type of Soil:")
+        lbl.setStyleSheet(label_style)
+        self.soil_type_combo = QComboBox()
+        self.soil_type_combo.addItems([
+            "Type I – Rocky or Hard Soil Sites (N>30)",
+            "Type II – Medium Soil Sites",
+            "Type III – Soft Soil Sites"
+        ])
+        self.soil_type_combo.setFixedWidth(field_width + 30)
+        apply_field_style(self.soil_type_combo)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.soil_type_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Time Period
+        lbl = QLabel("Time Period:")
+        lbl.setStyleSheet(label_style)
+        self.time_period_input = QLineEdit()
+        self.time_period_input.setFixedWidth(field_width)
+        apply_field_style(self.time_period_input)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.time_period_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Damping Percentage
+        lbl = QLabel("Damping Percentage:")
+        lbl.setStyleSheet(label_style)
+        self.damping_input = QLineEdit()
+        self.damping_input.setText("2")
+        self.damping_input.setFixedWidth(field_width)
+        apply_field_style(self.damping_input)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.damping_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Response Reduction Factor
+        lbl = QLabel("Response Reduction Factor:")
+        lbl.setStyleSheet(label_style)
+        self.response_factor_combo = QComboBox()
+        self.response_factor_combo.addItems(["1", "2", "3", "4", "5"])
+        self.response_factor_combo.setCurrentText("1")
+        self.response_factor_combo.setFixedWidth(field_width)
+        apply_field_style(self.response_factor_combo)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.response_factor_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Dead Load for Seismic Force
+        lbl = QLabel("Dead Load for Seismic Force (kN):")
+        lbl.setStyleSheet(label_style)
+        self.dead_load_seismic_combo = QComboBox()
+        self.dead_load_seismic_combo.addItems(["Automatic", "Custom"])
+        self.dead_load_seismic_combo.setFixedWidth(field_width)
+        apply_field_style(self.dead_load_seismic_combo)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.dead_load_seismic_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Custom Value for Dead Load
+        self.dead_load_custom_input = QLineEdit()
+        self.dead_load_custom_input.setPlaceholderText("Custom Value")
+        self.dead_load_custom_input.setFixedWidth(field_width)
+        self.dead_load_custom_input.setEnabled(False)
+        apply_field_style(self.dead_load_custom_input)
+        seismic_inputs_layout.addWidget(self.dead_load_custom_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Live Load for Seismic Force
+        lbl = QLabel("Live Load for Seismic Force (kN):")
+        lbl.setStyleSheet(label_style)
+        self.live_load_seismic_combo = QComboBox()
+        self.live_load_seismic_combo.addItems(["Automatic", "Custom"])
+        self.live_load_seismic_combo.setFixedWidth(field_width)
+        apply_field_style(self.live_load_seismic_combo)
+        seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        seismic_inputs_layout.addWidget(self.live_load_seismic_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Custom Value for Live Load
+        self.live_load_custom_input = QLineEdit()
+        self.live_load_custom_input.setPlaceholderText("Custom Value")
+        self.live_load_custom_input.setFixedWidth(field_width)
+        self.live_load_custom_input.setEnabled(False)
+        apply_field_style(self.live_load_custom_input)
+        seismic_inputs_layout.addWidget(self.live_load_custom_input, row, 1, Qt.AlignLeft)
+
+        left_layout.addWidget(seismic_inputs_box)
+
+        # ===== Computed Values Box =====
+        computed_box = QFrame()
+        computed_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        computed_layout = QGridLayout(computed_box)
+        computed_layout.setContentsMargins(12, 12, 12, 12)
+        computed_layout.setHorizontalSpacing(12)
+        computed_layout.setVerticalSpacing(10)
+        computed_layout.setColumnMinimumWidth(0, 200)
+
+        computed_fields = [
+            ("Zone Factor:", "zone_factor"),
+            ("Spectral Acceleration Coefficient:", "spectral_coeff"),
+            ("Horizontal Seismic Coefficient:", "horizontal_coeff"),
+            ("Vertical Seismic Coefficient:", "vertical_coeff"),
+        ]
+
+        self.seismic_computed_fields = {}
+        for idx, (label_text, field_name) in enumerate(computed_fields):
+            lbl = QLabel(label_text)
+            lbl.setStyleSheet(label_style)
+            field = QLineEdit()
+            field.setFixedWidth(field_width)
+            field.setReadOnly(True)
+            apply_field_style(field)
+            computed_layout.addWidget(lbl, idx, 0, Qt.AlignLeft | Qt.AlignVCenter)
+            computed_layout.addWidget(field, idx, 1, Qt.AlignLeft)
+            self.seismic_computed_fields[field_name] = field
+
+        left_layout.addWidget(computed_box)
+        left_layout.addStretch()
+
+        # Right description card
+        right_card = self._create_card()
+        right_card.setStyleSheet("QFrame { border: 1px solid #9c9c9c; border-radius: 10px; background-color: #d4d4d4; }")
+        right_card.setMinimumWidth(200)
+        right_card.setMinimumHeight(400)
+        right_layout = QVBoxLayout(right_card)
+        right_layout.setContentsMargins(16, 16, 16, 16)
+        right_layout.setSpacing(10)
+
+        desc_title = QLabel("Description Box")
+        desc_title.setAlignment(Qt.AlignCenter)
+        desc_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        right_layout.addWidget(desc_title)
+
+        desc_text = QLabel("Importance factor for normal, important, and critical bridges.")
+        desc_text.setWordWrap(True)
+        desc_text.setStyleSheet("font-size: 11px; color: #4b4b4b; background: transparent; border: none;")
+        right_layout.addWidget(desc_text)
+        right_layout.addStretch()
+
+        content_row.addWidget(left_card, 3)
+        content_row.addWidget(right_card, 2)
+
+        page_layout.addLayout(content_row)
+
+        # Connect signals for enabling/disabling custom inputs
+        self.dead_load_seismic_combo.currentTextChanged.connect(self._on_dead_load_mode_changed)
+        self.live_load_seismic_combo.currentTextChanged.connect(self._on_live_load_mode_changed)
+
+        return page
+
+    def _on_dead_load_mode_changed(self, mode):
+        is_custom = mode == "Custom"
+        self.dead_load_custom_input.setEnabled(is_custom)
+        if not is_custom:
+            self.dead_load_custom_input.clear()
+
+    def _on_live_load_mode_changed(self, mode):
+        is_custom = mode == "Custom"
+        self.live_load_custom_input.setEnabled(is_custom)
+        if not is_custom:
+            self.live_load_custom_input.clear()
+
     def _add_load_section(self, parent_layout, title, rows):
         title_label = QLabel(title)
         title_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3e3e3e; background: transparent; border: none;")
@@ -2828,6 +3051,641 @@ class LoadingTab(QWidget):
         card = QFrame()
         card.setStyleSheet("QFrame { border: 1px solid #cfcfcf; border-radius: 12px; background-color: #ffffff; }")
         return card
+
+    def _build_wind_load_tab(self):
+        """Build the Wind Load tab matching reference design"""
+        page = QWidget()
+        page.setStyleSheet("background-color: #f5f5f5;")
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(12, 12, 12, 12)
+        page_layout.setSpacing(12)
+
+        content_row = QHBoxLayout()
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(16)
+
+        # Left card with inputs - use scroll area for many fields
+        left_card = self._create_card()
+        left_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        left_card_layout = QVBoxLayout(left_card)
+        left_card_layout.setContentsMargins(0, 0, 0, 0)
+        left_card_layout.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet(
+            "QScrollArea { border: none; background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background: #ffffff;")
+        left_layout = QVBoxLayout(scroll_content)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(12)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+        field_width = 120
+
+        # ===== Wind Load Inputs Box =====
+        wind_inputs_box = QFrame()
+        wind_inputs_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        wind_inputs_layout = QVBoxLayout(wind_inputs_box)
+        wind_inputs_layout.setContentsMargins(12, 12, 12, 12)
+        wind_inputs_layout.setSpacing(10)
+
+        wind_title = QLabel("Wind Load (WL) Inputs for Evaluation per IRC6")
+        wind_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        wind_inputs_layout.addWidget(wind_title)
+
+        wind_grid = QGridLayout()
+        wind_grid.setContentsMargins(0, 4, 0, 0)
+        wind_grid.setHorizontalSpacing(12)
+        wind_grid.setVerticalSpacing(8)
+        wind_grid.setColumnMinimumWidth(0, 220)
+
+        row = 0
+
+        # Basic Wind Speed
+        lbl = QLabel("Basic Wind Speed (m/s):")
+        lbl.setStyleSheet(label_style)
+        self.basic_wind_speed_input = QLineEdit()
+        self.basic_wind_speed_input.setFixedWidth(field_width)
+        apply_field_style(self.basic_wind_speed_input)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.basic_wind_speed_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Average Exposed Height
+        lbl = QLabel("Average Exposed Height (m):")
+        lbl.setStyleSheet(label_style)
+        self.avg_exposed_height_input = QLineEdit()
+        self.avg_exposed_height_input.setFixedWidth(field_width)
+        apply_field_style(self.avg_exposed_height_input)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.avg_exposed_height_input, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Type of Terrain
+        lbl = QLabel("Type of Terrain:")
+        lbl.setStyleSheet(label_style)
+        self.terrain_type_combo = QComboBox()
+        self.terrain_type_combo.addItems(["Plain", "Hilly", "Coastal"])
+        self.terrain_type_combo.setFixedWidth(field_width)
+        apply_field_style(self.terrain_type_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.terrain_type_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Site Topography
+        lbl = QLabel("Site Topography:")
+        lbl.setStyleSheet(label_style)
+        self.site_topography_combo = QComboBox()
+        self.site_topography_combo.addItems(["Flat", "Hilly", "Ridge", "Valley"])
+        self.site_topography_combo.setFixedWidth(field_width)
+        apply_field_style(self.site_topography_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.site_topography_combo, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Gust Factor, G
+        lbl = QLabel("Gust Factor, G:")
+        lbl.setStyleSheet(label_style)
+        self.gust_factor_combo = QComboBox()
+        self.gust_factor_combo.addItems(["Automatic", "Custom"])
+        self.gust_factor_combo.setFixedWidth(field_width)
+        apply_field_style(self.gust_factor_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.gust_factor_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.gust_factor_value = QLineEdit()
+        self.gust_factor_value.setPlaceholderText("Value")
+        self.gust_factor_value.setFixedWidth(field_width)
+        self.gust_factor_value.setEnabled(False)
+        apply_field_style(self.gust_factor_value)
+        wind_grid.addWidget(self.gust_factor_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Drag Coefficient, CD
+        lbl = QLabel("Drag Coefficient, CD:")
+        lbl.setStyleSheet(label_style)
+        self.drag_coeff_combo = QComboBox()
+        self.drag_coeff_combo.addItems(["Automatic", "Custom"])
+        self.drag_coeff_combo.setFixedWidth(field_width)
+        apply_field_style(self.drag_coeff_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.drag_coeff_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.drag_coeff_value = QLineEdit()
+        self.drag_coeff_value.setPlaceholderText("Custom Value")
+        self.drag_coeff_value.setFixedWidth(field_width)
+        self.drag_coeff_value.setEnabled(False)
+        apply_field_style(self.drag_coeff_value)
+        wind_grid.addWidget(self.drag_coeff_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Drag Coefficient against Live Load, CDLL
+        lbl = QLabel("Drag Coefficient against Live Load, CDLL:")
+        lbl.setStyleSheet(label_style)
+        self.drag_coeff_ll_combo = QComboBox()
+        self.drag_coeff_ll_combo.addItems(["Automatic", "Custom"])
+        self.drag_coeff_ll_combo.setFixedWidth(field_width)
+        apply_field_style(self.drag_coeff_ll_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.drag_coeff_ll_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.drag_coeff_ll_value = QLineEdit()
+        self.drag_coeff_ll_value.setPlaceholderText("Value")
+        self.drag_coeff_ll_value.setFixedWidth(field_width)
+        self.drag_coeff_ll_value.setEnabled(False)
+        apply_field_style(self.drag_coeff_ll_value)
+        wind_grid.addWidget(self.drag_coeff_ll_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Lift Coefficient, CL
+        lbl = QLabel("Lift Coefficient, CL:")
+        lbl.setStyleSheet(label_style)
+        self.lift_coeff_combo = QComboBox()
+        self.lift_coeff_combo.addItems(["Automatic", "Custom"])
+        self.lift_coeff_combo.setFixedWidth(field_width)
+        apply_field_style(self.lift_coeff_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.lift_coeff_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.lift_coeff_value = QLineEdit()
+        self.lift_coeff_value.setPlaceholderText("Value")
+        self.lift_coeff_value.setFixedWidth(field_width)
+        self.lift_coeff_value.setEnabled(False)
+        apply_field_style(self.lift_coeff_value)
+        wind_grid.addWidget(self.lift_coeff_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Superstructure Area in Elevation
+        lbl = QLabel("Superstructure Area in Elevation (m2):")
+        lbl.setStyleSheet(label_style)
+        self.super_area_elev_combo = QComboBox()
+        self.super_area_elev_combo.addItems(["Automatic", "Custom"])
+        self.super_area_elev_combo.setFixedWidth(field_width)
+        apply_field_style(self.super_area_elev_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.super_area_elev_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.super_area_elev_value = QLineEdit()
+        self.super_area_elev_value.setPlaceholderText("Custom Value")
+        self.super_area_elev_value.setFixedWidth(field_width)
+        self.super_area_elev_value.setEnabled(False)
+        apply_field_style(self.super_area_elev_value)
+        wind_grid.addWidget(self.super_area_elev_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Superstructure Area in Plain
+        lbl = QLabel("Superstructure Area in Plain (m2):")
+        lbl.setStyleSheet(label_style)
+        self.super_area_plain_combo = QComboBox()
+        self.super_area_plain_combo.addItems(["Automatic", "Custom"])
+        self.super_area_plain_combo.setFixedWidth(field_width)
+        apply_field_style(self.super_area_plain_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.super_area_plain_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.super_area_plain_value = QLineEdit()
+        self.super_area_plain_value.setPlaceholderText("Custom Value")
+        self.super_area_plain_value.setFixedWidth(field_width)
+        self.super_area_plain_value.setEnabled(False)
+        apply_field_style(self.super_area_plain_value)
+        wind_grid.addWidget(self.super_area_plain_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Exposed Frontal Area of Live Load
+        lbl = QLabel("Exposed Frontal Area of Live Load (m2):")
+        lbl.setStyleSheet(label_style)
+        self.exposed_frontal_area_combo = QComboBox()
+        self.exposed_frontal_area_combo.addItems(["Automatic", "Custom"])
+        self.exposed_frontal_area_combo.setFixedWidth(field_width)
+        apply_field_style(self.exposed_frontal_area_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.exposed_frontal_area_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.exposed_frontal_area_value = QLineEdit()
+        self.exposed_frontal_area_value.setPlaceholderText("Custom Value")
+        self.exposed_frontal_area_value.setFixedWidth(field_width)
+        self.exposed_frontal_area_value.setEnabled(False)
+        apply_field_style(self.exposed_frontal_area_value)
+        wind_grid.addWidget(self.exposed_frontal_area_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Wind Load Eccentricity from Top of Deck
+        lbl = QLabel("Wind Load Eccentricity from Top of Deck\n(m): Negative for below deck")
+        lbl.setStyleSheet(label_style)
+        self.wind_ecc_deck_combo = QComboBox()
+        self.wind_ecc_deck_combo.addItems(["Automatic", "Custom"])
+        self.wind_ecc_deck_combo.setFixedWidth(field_width)
+        apply_field_style(self.wind_ecc_deck_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.wind_ecc_deck_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.wind_ecc_deck_value = QLineEdit()
+        self.wind_ecc_deck_value.setPlaceholderText("Value")
+        self.wind_ecc_deck_value.setFixedWidth(field_width)
+        self.wind_ecc_deck_value.setEnabled(False)
+        apply_field_style(self.wind_ecc_deck_value)
+        wind_grid.addWidget(self.wind_ecc_deck_value, row, 1, Qt.AlignLeft)
+        row += 1
+
+        # Wind on Live Load Eccentricity from Top of Deck
+        lbl = QLabel("Wind on Live Load Eccentricity from Top\nof Deck (m):")
+        lbl.setStyleSheet(label_style)
+        self.wind_ll_ecc_combo = QComboBox()
+        self.wind_ll_ecc_combo.addItems(["Automatic", "Custom"])
+        self.wind_ll_ecc_combo.setFixedWidth(field_width)
+        apply_field_style(self.wind_ll_ecc_combo)
+        wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        wind_grid.addWidget(self.wind_ll_ecc_combo, row, 1, Qt.AlignLeft)
+        row += 1
+        self.wind_ll_ecc_value = QLineEdit()
+        self.wind_ll_ecc_value.setPlaceholderText("Value")
+        self.wind_ll_ecc_value.setFixedWidth(field_width)
+        self.wind_ll_ecc_value.setEnabled(False)
+        apply_field_style(self.wind_ll_ecc_value)
+        wind_grid.addWidget(self.wind_ll_ecc_value, row, 1, Qt.AlignLeft)
+
+        wind_inputs_layout.addLayout(wind_grid)
+        left_layout.addWidget(wind_inputs_box)
+
+        # ===== Computed Values Box =====
+        computed_box = QFrame()
+        computed_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        computed_layout = QGridLayout(computed_box)
+        computed_layout.setContentsMargins(12, 12, 12, 12)
+        computed_layout.setHorizontalSpacing(12)
+        computed_layout.setVerticalSpacing(8)
+        computed_layout.setColumnMinimumWidth(0, 220)
+
+        computed_fields = [
+            ("Hourly Mean Wind Speed (m/s):", "hourly_mean_wind"),
+            ("Hourly Wind Pressure in N/m2:", "hourly_wind_pressure"),
+            ("Transverse Wind Force in N:", "transverse_wind_force"),
+            ("Longitudinal Wind Force in N:", "longitudinal_wind_force"),
+            ("Vertical Wind Force in N:", "vertical_wind_force"),
+            ("Transverse Wind Force on Live\nLoad in N:", "transverse_wind_ll"),
+            ("Longitudinal Wind Force on Live\nLoad in N:", "longitudinal_wind_ll"),
+        ]
+
+        self.wind_computed_fields = {}
+        for idx, (label_text, field_name) in enumerate(computed_fields):
+            lbl = QLabel(label_text)
+            lbl.setStyleSheet(label_style)
+            field = QLineEdit()
+            field.setFixedWidth(field_width)
+            field.setReadOnly(True)
+            apply_field_style(field)
+            computed_layout.addWidget(lbl, idx, 0, Qt.AlignLeft | Qt.AlignVCenter)
+            computed_layout.addWidget(field, idx, 1, Qt.AlignLeft)
+            self.wind_computed_fields[field_name] = field
+
+        left_layout.addWidget(computed_box)
+        left_layout.addStretch()
+
+        scroll.setWidget(scroll_content)
+        left_card_layout.addWidget(scroll)
+
+        # Right description card
+        right_card = self._create_card()
+        right_card.setStyleSheet("QFrame { border: 1px solid #9c9c9c; border-radius: 10px; background-color: #d4d4d4; }")
+        right_card.setMinimumWidth(150)
+        right_card.setMaximumWidth(200)
+        right_layout = QVBoxLayout(right_card)
+        right_layout.setContentsMargins(16, 16, 16, 16)
+        right_layout.setSpacing(10)
+
+        desc_title = QLabel("Description\nBox")
+        desc_title.setAlignment(Qt.AlignCenter)
+        desc_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        right_layout.addWidget(desc_title)
+        right_layout.addStretch()
+
+        content_row.addWidget(left_card, 3)
+        content_row.addWidget(right_card, 1)
+
+        page_layout.addLayout(content_row)
+
+        # Connect signals for enabling/disabling custom inputs
+        self.gust_factor_combo.currentTextChanged.connect(lambda t: self.gust_factor_value.setEnabled(t == "Custom"))
+        self.drag_coeff_combo.currentTextChanged.connect(lambda t: self.drag_coeff_value.setEnabled(t == "Custom"))
+        self.drag_coeff_ll_combo.currentTextChanged.connect(lambda t: self.drag_coeff_ll_value.setEnabled(t == "Custom"))
+        self.lift_coeff_combo.currentTextChanged.connect(lambda t: self.lift_coeff_value.setEnabled(t == "Custom"))
+        self.super_area_elev_combo.currentTextChanged.connect(lambda t: self.super_area_elev_value.setEnabled(t == "Custom"))
+        self.super_area_plain_combo.currentTextChanged.connect(lambda t: self.super_area_plain_value.setEnabled(t == "Custom"))
+        self.exposed_frontal_area_combo.currentTextChanged.connect(lambda t: self.exposed_frontal_area_value.setEnabled(t == "Custom"))
+        self.wind_ecc_deck_combo.currentTextChanged.connect(lambda t: self.wind_ecc_deck_value.setEnabled(t == "Custom"))
+        self.wind_ll_ecc_combo.currentTextChanged.connect(lambda t: self.wind_ll_ecc_value.setEnabled(t == "Custom"))
+
+        return page
+
+    def _build_temperature_load_tab(self):
+        """Build the Temperature Load tab matching reference design"""
+        page = QWidget()
+        page.setStyleSheet("background-color: #f5f5f5;")
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(12, 12, 12, 12)
+        page_layout.setSpacing(12)
+
+        content_row = QHBoxLayout()
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(16)
+
+        # Left card with inputs
+        left_card = self._create_card()
+        left_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        left_layout = QVBoxLayout(left_card)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(12)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+        field_width = 120
+
+        # ===== Inputs for evaluation per IRC6 Box =====
+        irc6_box = QFrame()
+        irc6_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        irc6_layout = QVBoxLayout(irc6_box)
+        irc6_layout.setContentsMargins(12, 12, 12, 12)
+        irc6_layout.setSpacing(10)
+
+        irc6_title = QLabel("Inputs for evaluation per IRC6")
+        irc6_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        irc6_layout.addWidget(irc6_title)
+
+        irc6_grid = QGridLayout()
+        irc6_grid.setContentsMargins(0, 4, 0, 0)
+        irc6_grid.setHorizontalSpacing(12)
+        irc6_grid.setVerticalSpacing(10)
+        irc6_grid.setColumnMinimumWidth(0, 200)
+
+        # Highest Maximum Air Temperature
+        lbl = QLabel("Highest Maximum Air Temperature:")
+        lbl.setStyleSheet(label_style)
+        self.highest_max_temp_input = QLineEdit()
+        self.highest_max_temp_input.setFixedWidth(field_width)
+        apply_field_style(self.highest_max_temp_input)
+        irc6_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        irc6_grid.addWidget(self.highest_max_temp_input, 0, 1, Qt.AlignLeft)
+
+        # Lowest Minimum Air Temperature
+        lbl = QLabel("Lowest Minimum Air Temperature:")
+        lbl.setStyleSheet(label_style)
+        self.lowest_min_temp_input = QLineEdit()
+        self.lowest_min_temp_input.setFixedWidth(field_width)
+        apply_field_style(self.lowest_min_temp_input)
+        irc6_grid.addWidget(lbl, 1, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        irc6_grid.addWidget(self.lowest_min_temp_input, 1, 1, Qt.AlignLeft)
+
+        irc6_layout.addLayout(irc6_grid)
+        left_layout.addWidget(irc6_box)
+
+        # ===== Range of Effective Bridge Temperature Box =====
+        range_box = QFrame()
+        range_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        range_layout = QVBoxLayout(range_box)
+        range_layout.setContentsMargins(12, 12, 12, 12)
+        range_layout.setSpacing(10)
+
+        range_title = QLabel("Range of Effective Bridge Temperature:")
+        range_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        range_layout.addWidget(range_title)
+
+        range_grid = QGridLayout()
+        range_grid.setContentsMargins(0, 4, 0, 0)
+        range_grid.setHorizontalSpacing(12)
+        range_grid.setVerticalSpacing(10)
+        range_grid.setColumnMinimumWidth(0, 200)
+
+        # Minimum
+        lbl = QLabel("Minimum:")
+        lbl.setStyleSheet(label_style)
+        self.bridge_temp_min_input = QLineEdit()
+        self.bridge_temp_min_input.setFixedWidth(field_width)
+        apply_field_style(self.bridge_temp_min_input)
+        range_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        range_grid.addWidget(self.bridge_temp_min_input, 0, 1, Qt.AlignLeft)
+
+        # Maximum
+        lbl = QLabel("Maximum:")
+        lbl.setStyleSheet(label_style)
+        self.bridge_temp_max_input = QLineEdit()
+        self.bridge_temp_max_input.setFixedWidth(field_width)
+        apply_field_style(self.bridge_temp_max_input)
+        range_grid.addWidget(lbl, 1, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        range_grid.addWidget(self.bridge_temp_max_input, 1, 1, Qt.AlignLeft)
+
+        range_layout.addLayout(range_grid)
+        left_layout.addWidget(range_box)
+
+        # ===== Coefficient of Thermal Expansion Box =====
+        coeff_box = QFrame()
+        coeff_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 8px; background-color: #ffffff; }")
+        coeff_layout = QGridLayout(coeff_box)
+        coeff_layout.setContentsMargins(12, 12, 12, 12)
+        coeff_layout.setHorizontalSpacing(12)
+        coeff_layout.setVerticalSpacing(10)
+        coeff_layout.setColumnMinimumWidth(0, 200)
+
+        lbl = QLabel("Coefficient of Thermal Expansion for Steel:")
+        lbl.setStyleSheet(label_style)
+        self.thermal_coeff_combo = QComboBox()
+        self.thermal_coeff_combo.addItems(["12 × 10⁻⁶ /°C", "11.7 × 10⁻⁶ /°C", "Custom"])
+        self.thermal_coeff_combo.setFixedWidth(field_width)
+        apply_field_style(self.thermal_coeff_combo)
+        coeff_layout.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        coeff_layout.addWidget(self.thermal_coeff_combo, 0, 1, Qt.AlignLeft)
+
+        left_layout.addWidget(coeff_box)
+        left_layout.addStretch()
+
+        # Right description card
+        right_card = self._create_card()
+        right_card.setStyleSheet("QFrame { border: 1px solid #9c9c9c; border-radius: 10px; background-color: #d4d4d4; }")
+        right_card.setMinimumWidth(200)
+        right_card.setMinimumHeight(400)
+        right_layout = QVBoxLayout(right_card)
+        right_layout.setContentsMargins(16, 16, 16, 16)
+        right_layout.setSpacing(10)
+
+        desc_title = QLabel("Description Box")
+        desc_title.setAlignment(Qt.AlignCenter)
+        desc_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        right_layout.addWidget(desc_title)
+        right_layout.addStretch()
+
+        content_row.addWidget(left_card, 3)
+        content_row.addWidget(right_card, 2)
+
+        page_layout.addLayout(content_row)
+
+        return page
+
+    def _build_load_combination_tab(self):
+        """Build the Load Combination tab matching reference design"""
+        page = QWidget()
+        page.setStyleSheet("background-color: #f5f5f5;")
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(12, 12, 12, 12)
+        page_layout.setSpacing(12)
+
+        content_row = QHBoxLayout()
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(16)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+
+        # Left card - combination list
+        left_card = self._create_card()
+        left_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        left_layout = QVBoxLayout(left_card)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(12)
+
+        # Auto include checkbox row
+        auto_row = QHBoxLayout()
+        auto_row.setContentsMargins(0, 0, 0, 0)
+        auto_row.setSpacing(8)
+        auto_label = QLabel("Auto include all IRC 6 Load Combinations")
+        auto_label.setStyleSheet("font-size: 11px; color: #3a3a3a; background: transparent; border: none;")
+        self.auto_include_checkbox = QCheckBox()
+        self.auto_include_checkbox.setStyleSheet(
+            "QCheckBox { background: transparent; border: none; }"
+            "QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #b2b2b2; border-radius: 3px; background: #ffffff; }"
+            "QCheckBox::indicator:checked { background: #9ecb3d; border: 1px solid #7da832; }"
+        )
+        auto_row.addWidget(auto_label)
+        auto_row.addWidget(self.auto_include_checkbox)
+        auto_row.addStretch()
+        left_layout.addLayout(auto_row)
+
+        # Combination Name label
+        combo_name_label = QLabel("Combination Name")
+        combo_name_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        left_layout.addWidget(combo_name_label)
+
+        # Combination list area
+        self.combination_list_widget = QWidget()
+        self.combination_list_widget.setStyleSheet("background: #ffffff;")
+        self.combination_list_layout = QVBoxLayout(self.combination_list_widget)
+        self.combination_list_layout.setContentsMargins(0, 8, 0, 8)
+        self.combination_list_layout.setSpacing(8)
+
+        # Add sample combinations
+        sample_combos = ["DL + LL", "1.35 DL + 1.75 LL"]
+        for combo_text in sample_combos:
+            combo_label = QLabel(combo_text)
+            combo_label.setStyleSheet(label_style)
+            self.combination_list_layout.addWidget(combo_label)
+
+        self.combination_list_layout.addStretch()
+        left_layout.addWidget(self.combination_list_widget, 1)
+
+        # Middle card - combination editor
+        middle_card = self._create_card()
+        middle_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        middle_layout = QVBoxLayout(middle_card)
+        middle_layout.setContentsMargins(16, 16, 16, 16)
+        middle_layout.setSpacing(12)
+
+        # Combination Name title
+        combo_title = QLabel("Combination Name")
+        combo_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;")
+        middle_layout.addWidget(combo_title)
+
+        # Editor area with table and buttons
+        editor_row = QHBoxLayout()
+        editor_row.setContentsMargins(0, 0, 0, 0)
+        editor_row.setSpacing(12)
+
+        # Table for Load Name and Scale Factor
+        table_box = QFrame()
+        table_box.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 4px; background-color: #ffffff; }")
+        table_layout = QVBoxLayout(table_box)
+        table_layout.setContentsMargins(0, 0, 0, 0)
+        table_layout.setSpacing(0)
+
+        # Header row
+        header_widget = QWidget()
+        header_widget.setStyleSheet("background: #ffffff; border-bottom: 1px solid #b2b2b2;")
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(8, 8, 8, 8)
+        header_layout.setSpacing(8)
+
+        load_name_header = QLabel("Load Name")
+        load_name_header.setStyleSheet("font-size: 11px; font-weight: 600; color: #3a3a3a; background: transparent; border: none;")
+        load_name_header.setMinimumWidth(80)
+        scale_factor_header = QLabel("Scale Factor")
+        scale_factor_header.setStyleSheet("font-size: 11px; font-weight: 600; color: #3a3a3a; background: transparent; border: none;")
+        scale_factor_header.setMinimumWidth(80)
+
+        header_layout.addWidget(load_name_header)
+        header_layout.addWidget(scale_factor_header)
+        table_layout.addWidget(header_widget)
+
+        # Input row
+        input_widget = QWidget()
+        input_widget.setStyleSheet("background: #ffffff;")
+        input_layout = QHBoxLayout(input_widget)
+        input_layout.setContentsMargins(8, 8, 8, 8)
+        input_layout.setSpacing(8)
+
+        self.load_name_combo = QComboBox()
+        self.load_name_combo.addItems(["DL", "LL", "WL", "EL", "TL"])
+        self.load_name_combo.setMinimumWidth(80)
+        apply_field_style(self.load_name_combo)
+
+        self.scale_factor_input = QLineEdit()
+        self.scale_factor_input.setMinimumWidth(80)
+        apply_field_style(self.scale_factor_input)
+
+        input_layout.addWidget(self.load_name_combo)
+        input_layout.addWidget(self.scale_factor_input)
+        table_layout.addWidget(input_widget)
+
+        # Empty space for more rows
+        table_layout.addStretch()
+
+        editor_row.addWidget(table_box, 1)
+
+        # Add/Delete buttons column
+        button_col = QVBoxLayout()
+        button_col.setContentsMargins(0, 0, 0, 0)
+        button_col.setSpacing(8)
+
+        self.add_load_btn = QPushButton("Add")
+        self.add_load_btn.setFixedWidth(60)
+        self.add_load_btn.setStyleSheet(
+            "QPushButton { background: #ffffff; border: 1px solid #b2b2b2; border-radius: 4px; padding: 6px 12px; font-size: 11px; color: #3a3a3a; }"
+            "QPushButton:hover { background: #f0f0f0; }"
+            "QPushButton:pressed { background: #e0e0e0; }"
+        )
+
+        self.delete_load_btn = QPushButton("Delete")
+        self.delete_load_btn.setFixedWidth(60)
+        self.delete_load_btn.setStyleSheet(
+            "QPushButton { background: #ffffff; border: 1px solid #b2b2b2; border-radius: 4px; padding: 6px 12px; font-size: 11px; color: #3a3a3a; }"
+            "QPushButton:hover { background: #f0f0f0; }"
+            "QPushButton:pressed { background: #e0e0e0; }"
+        )
+
+        button_col.addWidget(self.add_load_btn)
+        button_col.addWidget(self.delete_load_btn)
+        button_col.addStretch()
+
+        editor_row.addLayout(button_col)
+        middle_layout.addLayout(editor_row, 1)
+
+        content_row.addWidget(left_card, 2)
+        content_row.addWidget(middle_card, 3)
+
+        page_layout.addLayout(content_row)
+
+        return page
 
     def _create_placeholder_page(self, title):
         page = QWidget()
