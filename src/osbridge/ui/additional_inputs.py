@@ -3780,28 +3780,12 @@ class AdditionalInputsWidget(QWidget):
         self.tabs.addTab(self.loading_tab, "Loading")
         
         # Sub-Tab 4: Support Conditions
-        support_tab = self.create_placeholder_tab(
-            "Support Conditions",
-            "This tab will contain:\n\n" +
-            "• Left Support (Fixed/Pinned)\n" +
-            "• Right Support (Fixed/Pinned)\n" +
-            "• Bearing Length (mm)\n\n" +
-            "Note: If bearing length is 0, the end bearing\n" +
-            "stiffener will not be designed.\n\n" +
-            "Implementation in progress..."
-        )
+        support_tab = self._build_support_conditions_tab()
         self.tabs.addTab(support_tab, "Support Conditions")
         
         # Sub-Tab 5: Design Options
-        shear_connection_tab = self.create_placeholder_tab(
-            "Design Options",
-            "This tab will contain:\n\n" +
-            "• Shear Connector Type\n" +
-            "• Connector Size and Spacing\n" +
-            "• Connection Details\n\n" +
-            "Implementation in progress..."
-        )
-        self.tabs.addTab(shear_connection_tab, "Design Options")
+        design_options_tab = self._build_design_options_tab()
+        self.tabs.addTab(design_options_tab, "Design Options")
         
         # Sub-Tab 6: Design Options (Cont.)
         analysis_design_tab = self.create_placeholder_tab(
@@ -3816,7 +3800,175 @@ class AdditionalInputsWidget(QWidget):
         self.tabs.addTab(analysis_design_tab, "Design Options (Cont.)")
         
         main_layout.addWidget(self.tabs)
+
+    def _build_support_conditions_tab(self):
+        """Build the Support Conditions tab matching reference design"""
+        widget = QWidget()
+        widget.setStyleSheet("background-color: #f5f5f5;")
         
+        main_layout = QVBoxLayout(widget)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
+
+        # Main card
+        card = QFrame()
+        card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(16, 16, 16, 16)
+        card_layout.setSpacing(16)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+        heading_style = "font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;"
+        field_width = 120
+
+        # Support Condition section
+        support_title = QLabel("Support Condition*")
+        support_title.setStyleSheet(heading_style)
+        card_layout.addWidget(support_title)
+
+        support_grid = QGridLayout()
+        support_grid.setContentsMargins(0, 8, 0, 0)
+        support_grid.setHorizontalSpacing(12)
+        support_grid.setVerticalSpacing(12)
+        support_grid.setColumnMinimumWidth(0, 120)
+
+        # Left Support
+        lbl = QLabel("Left Support:")
+        lbl.setStyleSheet(label_style)
+        self.left_support_combo = QComboBox()
+        self.left_support_combo.addItems(["Fixed", "Pinned", "Roller"])
+        self.left_support_combo.setFixedWidth(field_width)
+        apply_field_style(self.left_support_combo)
+        support_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        support_grid.addWidget(self.left_support_combo, 0, 1, Qt.AlignLeft)
+
+        # Right Support
+        lbl = QLabel("Right Support:")
+        lbl.setStyleSheet(label_style)
+        self.right_support_combo = QComboBox()
+        self.right_support_combo.addItems(["Fixed", "Pinned", "Roller"])
+        self.right_support_combo.setFixedWidth(field_width)
+        apply_field_style(self.right_support_combo)
+        support_grid.addWidget(lbl, 1, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        support_grid.addWidget(self.right_support_combo, 1, 1, Qt.AlignLeft)
+
+        card_layout.addLayout(support_grid)
+
+        # Bearing Length section
+        bearing_title = QLabel("Bearing length*")
+        bearing_title.setStyleSheet(heading_style)
+        card_layout.addWidget(bearing_title)
+
+        bearing_grid = QGridLayout()
+        bearing_grid.setContentsMargins(0, 8, 0, 0)
+        bearing_grid.setHorizontalSpacing(12)
+        bearing_grid.setVerticalSpacing(12)
+        bearing_grid.setColumnMinimumWidth(0, 120)
+
+        lbl = QLabel("Bearing Length Value")
+        lbl.setStyleSheet(label_style)
+        self.bearing_length_input = QLineEdit()
+        self.bearing_length_input.setText("0")
+        self.bearing_length_input.setFixedWidth(field_width)
+        apply_field_style(self.bearing_length_input)
+        bearing_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        bearing_grid.addWidget(self.bearing_length_input, 0, 1, Qt.AlignLeft)
+
+        card_layout.addLayout(bearing_grid)
+        card_layout.addStretch()
+
+        main_layout.addWidget(card)
+        main_layout.addStretch()
+
+        return widget
+
+    def _build_design_options_tab(self):
+        """Build the Design Options tab matching reference design"""
+        widget = QWidget()
+        widget.setStyleSheet("background-color: #f5f5f5;")
+        
+        main_layout = QVBoxLayout(widget)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(12)
+
+        # Main card
+        card = QFrame()
+        card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(16, 16, 16, 16)
+        card_layout.setSpacing(12)
+
+        label_style = "font-size: 11px; color: #3a3a3a; background: transparent; border: none;"
+        heading_style = "font-size: 12px; font-weight: 700; color: #2b2b2b; background: transparent; border: none;"
+        field_width = 120
+
+        # Deck Design section
+        deck_title = QLabel("Deck Design:")
+        deck_title.setStyleSheet(heading_style)
+        card_layout.addWidget(deck_title)
+
+        deck_grid = QGridLayout()
+        deck_grid.setContentsMargins(0, 4, 0, 0)
+        deck_grid.setHorizontalSpacing(12)
+        deck_grid.setVerticalSpacing(10)
+        deck_grid.setColumnMinimumWidth(0, 120)
+
+        lbl = QLabel("Reinforcement Size:")
+        lbl.setStyleSheet(label_style)
+        self.reinforcement_size_combo = QComboBox()
+        self.reinforcement_size_combo.addItems(["8 mm", "10 mm", "12 mm", "16 mm", "20 mm"])
+        self.reinforcement_size_combo.setFixedWidth(field_width)
+        apply_field_style(self.reinforcement_size_combo)
+        deck_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        deck_grid.addWidget(self.reinforcement_size_combo, 0, 1, Qt.AlignLeft)
+
+        card_layout.addLayout(deck_grid)
+
+        # Shear Studs section
+        shear_title = QLabel("Shear Studs:")
+        shear_title.setStyleSheet(heading_style)
+        card_layout.addWidget(shear_title)
+
+        shear_grid = QGridLayout()
+        shear_grid.setContentsMargins(0, 4, 0, 0)
+        shear_grid.setHorizontalSpacing(12)
+        shear_grid.setVerticalSpacing(10)
+        shear_grid.setColumnMinimumWidth(0, 120)
+
+        # Material
+        lbl = QLabel("Material:")
+        lbl.setStyleSheet(label_style)
+        self.shear_stud_material_input = QLineEdit()
+        self.shear_stud_material_input.setFixedWidth(field_width)
+        apply_field_style(self.shear_stud_material_input)
+        shear_grid.addWidget(lbl, 0, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        shear_grid.addWidget(self.shear_stud_material_input, 0, 1, Qt.AlignLeft)
+
+        # Diameter
+        lbl = QLabel("Diameter (mm):")
+        lbl.setStyleSheet(label_style)
+        self.shear_stud_diameter_input = QLineEdit()
+        self.shear_stud_diameter_input.setFixedWidth(field_width)
+        apply_field_style(self.shear_stud_diameter_input)
+        shear_grid.addWidget(lbl, 1, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        shear_grid.addWidget(self.shear_stud_diameter_input, 1, 1, Qt.AlignLeft)
+
+        # Height
+        lbl = QLabel("Height (mm):")
+        lbl.setStyleSheet(label_style)
+        self.shear_stud_height_input = QLineEdit()
+        self.shear_stud_height_input.setFixedWidth(field_width)
+        apply_field_style(self.shear_stud_height_input)
+        shear_grid.addWidget(lbl, 2, 0, Qt.AlignLeft | Qt.AlignVCenter)
+        shear_grid.addWidget(self.shear_stud_height_input, 2, 1, Qt.AlignLeft)
+
+        card_layout.addLayout(shear_grid)
+        card_layout.addStretch()
+
+        main_layout.addWidget(card)
+        main_layout.addStretch()
+
+        return widget
     
     def create_placeholder_tab(self, title, description):
         """Create a styled placeholder tab with title and description"""
