@@ -193,7 +193,7 @@ class OptimizableField(QWidget):
 
     def on_mode_changed(self, text):
         """Enable/disable input field based on selection"""
-        if text in ("Optimized", "All"):
+        if text in ("Optimized", "All", "NA"):
             self.input_field.setEnabled(False)
             self.input_field.clear()
             self.input_field.setVisible(False)
@@ -357,9 +357,7 @@ class TypicalSectionDetailsTab(QWidget):
         layout_widget = QWidget()
         layout_widget.setStyleSheet("background-color: #f5f5f5;")
         layout_layout = QVBoxLayout(layout_widget)
-        # CHANGED: Reduced all margins significantly
         layout_layout.setContentsMargins(18, 6, 18, 12)
-        # CHANGED: Set spacing to 0 to remove gap between title and grid
         layout_layout.setSpacing(0)
 
         title_label = QLabel("Inputs:")
@@ -1050,10 +1048,6 @@ class GirderDetailsTab(QWidget):
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         main_layout.addWidget(scroll)
 
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
-
         content = QWidget()
         scroll.setWidget(content)
         content.setStyleSheet("background-color: white;")
@@ -1148,8 +1142,8 @@ class GirderDetailsTab(QWidget):
         # Section Inputs box (single frame containing all fields)
         section_inputs_box = self._create_inner_box()
         section_inputs_layout = QVBoxLayout(section_inputs_box)
-        section_inputs_layout.setContentsMargins(12, 10, 12, 10)
-        section_inputs_layout.setSpacing(10)
+        section_inputs_layout.setContentsMargins(12, 8, 12, 12)
+        section_inputs_layout.setSpacing(8)
 
         section_inputs_title = self._create_label("Section Inputs:")
         section_inputs_layout.addWidget(section_inputs_title)
@@ -1209,31 +1203,43 @@ class GirderDetailsTab(QWidget):
         apply_field_style(self.is_section_combo)
         self._add_box_row(inputs_grid, row, "IS Section:", self.is_section_combo, self.rolled_rows)
 
-        # Torsional restraint group heading (only shown for welded)
-        torsion_heading = self._create_label("Torsional & Web Details:")
-        torsion_heading.setProperty("category", "torsion")
-        torsion_heading.setStyleSheet("font-size: 11px; font-weight: 600; color: #4b4b4b; border: none;")
-        inputs_grid.addWidget(torsion_heading, row, 0, 1, 2)
-        self.torsion_heading = torsion_heading
-        row += 1
+        section_inputs_layout.addLayout(inputs_grid)
+        left_column_layout.addWidget(section_inputs_box)
+
+        # Restraint/Web details box
+        restraint_box = self._create_inner_box()
+        restraint_layout = QVBoxLayout(restraint_box)
+        restraint_layout.setContentsMargins(12, 8, 12, 12)
+        restraint_layout.setSpacing(8)
+
+        restraint_title = self._create_label("Restraint & Web Details:")
+        restraint_layout.addWidget(restraint_title)
+
+        restraint_grid = QGridLayout()
+        restraint_grid.setContentsMargins(0, 0, 0, 0)
+        restraint_grid.setHorizontalSpacing(16)
+        restraint_grid.setVerticalSpacing(12)
+        restraint_grid.setColumnMinimumWidth(0, 150)
+        restraint_grid.setColumnStretch(0, 0)
+        restraint_grid.setColumnStretch(1, 1)
 
         self.torsion_combo = QComboBox()
         self.torsion_combo.addItems(VALUES_TORSIONAL_RESTRAINT)
         apply_field_style(self.torsion_combo)
-        row = self._add_box_row(inputs_grid, row, "Torsional Restraint:", self.torsion_combo, self.welded_rows)
+        row = self._add_box_row(restraint_grid, 0, "Torsional Restraint:", self.torsion_combo)
 
         self.warping_combo = QComboBox()
         self.warping_combo.addItems(VALUES_WARPING_RESTRAINT)
         apply_field_style(self.warping_combo)
-        row = self._add_box_row(inputs_grid, row, "Warping Restraint:", self.warping_combo, self.welded_rows)
+        row = self._add_box_row(restraint_grid, row, "Warping Restraint:", self.warping_combo)
 
         self.web_type_combo = QComboBox()
         self.web_type_combo.addItems(["Thin Web with ITS", "Thick Web"])
         apply_field_style(self.web_type_combo)
-        self._add_box_row(inputs_grid, row, "Web Type*:", self.web_type_combo, self.welded_rows)
+        self._add_box_row(restraint_grid, row, "Web Type*:", self.web_type_combo)
 
-        section_inputs_layout.addLayout(inputs_grid)
-        left_column_layout.addWidget(section_inputs_box)
+        restraint_layout.addLayout(restraint_grid)
+        left_column_layout.addWidget(restraint_box)
 
         main_layout.addWidget(left_column)
 
@@ -1349,17 +1355,10 @@ class GirderDetailsTab(QWidget):
         is_welded = text.lower() == "welded"
         self._set_row_visibility(self.welded_rows, is_welded)
         self._set_row_visibility(self.rolled_rows, not is_welded)
-        if hasattr(self, "torsion_heading"):
-            self.torsion_heading.setVisible(is_welded)
         if is_welded:
             self.dynamic_image_label.setText("Welded Girder")
         else:
             self.dynamic_image_label.setText("Rolled Section")
-
-    def _set_row_visibility(self, rows, visible):
-        for label, widget in rows:
-            label.setVisible(visible)
-            widget.setVisible(visible)
 
     def _create_inner_box(self):
         """Create a bordered box for grouped controls"""
@@ -1418,9 +1417,14 @@ class GirderDetailsTab(QWidget):
             visibility_list.append((label, widget))
         return row + 1
 
+    def _set_row_visibility(self, rows, visible):
+        for label, widget in rows:
+            label.setVisible(visible)
+            widget.setVisible(visible)
+
 
 class StiffenerDetailsTab(QWidget):
-    """Tab for Stiffener Details with card layout"""
+    """Tab for Stiffener Details with compact layout"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1441,56 +1445,52 @@ class StiffenerDetailsTab(QWidget):
         )
         main_layout.addWidget(scroll)
 
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
-
         container = QWidget()
         scroll.setWidget(container)
+        container.setStyleSheet("background-color: #f4f4f4;")
 
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(16)
+        container_layout.setSpacing(4)
 
-        # Primary card containing inputs + description
-        primary_card = self._create_card_frame()
-        card_layout = QHBoxLayout(primary_card)
-        card_layout.setContentsMargins(16, 16, 16, 16)
-        card_layout.setSpacing(16)
+        # Combined card for inputs and description
+        card_frame = self._create_card_frame()
+        card_layout = QHBoxLayout(card_frame)
+        card_layout.setContentsMargins(18, 16, 18, 16)
+        card_layout.setSpacing(18)
 
+        # Left column - inputs
         left_column = QWidget()
-        left_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         left_layout = QVBoxLayout(left_column)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(14)
+        left_layout.setSpacing(12)
 
-        # Girder selection
+        girder_row = QHBoxLayout()
+        girder_row.setContentsMargins(0, 0, 0, 0)
+        girder_row.setSpacing(10)
+
+        girder_label = QLabel("Select Girder Member:")
+        girder_label.setStyleSheet("font-size: 11px; font-weight: 600; color: #3a3a3a; border: none;")
+        girder_row.addWidget(girder_label)
+
         self.girder_member_combo = QComboBox()
         self.girder_member_combo.addItems(["G1-1", "G1-2", "G1-3", "All"])
         apply_field_style(self.girder_member_combo)
+        self.girder_member_combo.setFixedWidth(190)
+        self.girder_member_combo.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        girder_row.addWidget(self.girder_member_combo, 1)
 
-        selection_box = self._create_inner_box()
-        selection_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        selection_layout = QVBoxLayout(selection_box)
-        selection_layout.setContentsMargins(12, 10, 12, 10)
-        selection_layout.setSpacing(8)
-        selection_layout.addWidget(self._create_heading_label("Select Girder Member"))
-        self.girder_member_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        selection_layout.addWidget(self.girder_member_combo)
-        left_layout.addWidget(selection_box)
+        left_layout.addLayout(girder_row)
 
-        # Stiffener inputs box
-        inputs_box = self._create_inner_box()
-        inputs_layout = QVBoxLayout(inputs_box)
-        inputs_layout.setContentsMargins(12, 10, 12, 10)
-        inputs_layout.setSpacing(10)
-        inputs_layout.addWidget(self._create_heading_label("Stiffener Inputs"))
+        stiffener_heading = QLabel("Stiffener Inputs")
+        stiffener_heading.setStyleSheet("font-size: 11px; font-weight: 700; color: #000000; border: none; margin-top: 4px;")
+        left_layout.addWidget(stiffener_heading)
 
         inputs_grid = QGridLayout()
         inputs_grid.setContentsMargins(0, 0, 0, 0)
-        inputs_grid.setHorizontalSpacing(16)
-        inputs_grid.setVerticalSpacing(12)
-        inputs_grid.setColumnMinimumWidth(0, 150)
+        inputs_grid.setHorizontalSpacing(12)
+        inputs_grid.setVerticalSpacing(10)
+        inputs_grid.setColumnMinimumWidth(0, 180)
         inputs_grid.setColumnStretch(0, 0)
         inputs_grid.setColumnStretch(1, 1)
 
@@ -1522,92 +1522,81 @@ class StiffenerDetailsTab(QWidget):
         apply_field_style(self.long_thick_combo)
         row = self._add_form_row(inputs_grid, row, "Longitudinal Stiffener Thickness:", self.long_thick_combo)
 
-        inputs_layout.addLayout(inputs_grid)
+        left_layout.addLayout(inputs_grid)
 
-        # Web buckling section
-        inputs_layout.addWidget(self._create_heading_label("Web Buckling Details"))
+        buckling_heading = QLabel("Web Buckling Details")
+        buckling_heading.setStyleSheet("font-size: 11px; font-weight: 700; color: #000000; border: none; margin-top: 4px;")
+        left_layout.addWidget(buckling_heading)
+
+        buckling_grid = QGridLayout()
+        buckling_grid.setContentsMargins(0, 0, 0, 0)
+        buckling_grid.setHorizontalSpacing(12)
+        buckling_grid.setVerticalSpacing(10)
+        buckling_grid.setColumnMinimumWidth(0, 180)
+
         self.method_combo = QComboBox()
         self.method_combo.addItems(VALUES_STIFFENER_DESIGN)
         apply_field_style(self.method_combo)
-        inputs_layout.addLayout(self._form_row(self._create_label("Shear Buckling Design Method:"), self.method_combo))
+        self._add_form_row(buckling_grid, 0, "Shear Buckling Design Method:", self.method_combo)
 
-        left_layout.addWidget(inputs_box)
+        left_layout.addLayout(buckling_grid)
 
-        card_layout.addWidget(left_column)
+        card_layout.addWidget(left_column, 2)
 
-        # Description box on right
+        # Right column - description
         right_column = QWidget()
-        right_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(14)
+        right_layout.setSpacing(8)
 
-        description_box = self._create_inner_box()
-        desc_layout = QVBoxLayout(description_box)
-        desc_layout.setContentsMargins(12, 10, 12, 10)
-        desc_layout.setSpacing(8)
-        desc_layout.addWidget(self._create_heading_label("Description"))
+        desc_heading = QLabel("Description")
+        desc_heading.setStyleSheet("font-size: 11px; font-weight: 700; color: #000000; border: none;")
+        right_layout.addWidget(desc_heading)
+
         self.description_text = QTextEdit()
         self.description_text.setReadOnly(True)
         self.description_text.setPlaceholderText("Describe stiffener assumptions or notes here.")
-        self.description_text.setStyleSheet("QTextEdit { border: none; background: transparent; color: #3a3a3a; }")
-        desc_layout.addWidget(self.description_text)
-        right_layout.addWidget(description_box)
+        self.description_text.setMinimumHeight(210)
+        self.description_text.setStyleSheet(
+            "QTextEdit { border: 1px solid #d0d0d0; border-radius: 6px; background: #ffffff; color: #3a3a3a; font-size: 11px; }"
+        )
+        right_layout.addWidget(self.description_text, 1)
 
-        card_layout.addWidget(right_column)
-        container_layout.addWidget(primary_card)
+        card_layout.addWidget(right_column, 3)
 
-        # Dynamic image box spanning width
-        image_box = self._create_inner_box()
+        container_layout.addWidget(card_frame)
+
+        # Dynamic image box
+        image_box = self._create_card_frame()
         image_layout = QVBoxLayout(image_box)
-        image_layout.setContentsMargins(20, 16, 20, 16)
+        image_layout.setContentsMargins(16, 16, 16, 16)
         image_layout.setSpacing(8)
+
         self.dynamic_image_label = QLabel("Dynamic Image")
         self.dynamic_image_label.setAlignment(Qt.AlignCenter)
-        self.dynamic_image_label.setMinimumHeight(180)
-        self.dynamic_image_label.setStyleSheet("QLabel { border: 1px solid #d0d0d0; border-radius: 8px; background-color: #fafafa; font-weight: bold; color: #5b5b5b; }")
+        self.dynamic_image_label.setMinimumHeight(140)
+        self.dynamic_image_label.setStyleSheet(
+            "QLabel { border: 1px solid #d8d8d8; border-radius: 8px; background-color: #f8f8f8; "
+            "font-weight: 600; color: #5b5b5b; font-size: 11px; }"
+        )
         image_layout.addWidget(self.dynamic_image_label)
         container_layout.addWidget(image_box)
-        container_layout.addStretch()
+
 
         # Signals
         self.longitudinal_combo.currentTextChanged.connect(self.on_longitudinal_changed)
 
     def _create_card_frame(self):
         card = QFrame()
-        card.setStyleSheet("QFrame { border: 1px solid #d0d0d0; border-radius: 12px; background-color: #ffffff; }")
-        return card
-
-    def _create_inner_box(self):
-        box = QFrame()
-        box.setStyleSheet(
-            "QFrame { border: 1px solid #cfcfcf; border-radius: 8px; background-color: #ffffff; }"
-            "QFrame QComboBox, QFrame QLineEdit { border: none; border-bottom: 1px solid #d0d0d0; border-radius: 0px; padding: 4px 8px; background-color: #ffffff; min-height: 28px; }"
-            "QFrame QComboBox:hover, QFrame QLineEdit:hover { border-bottom: 1px solid #5d5d5d; }"
-            "QFrame QComboBox:focus, QFrame QLineEdit:focus { border-bottom: 1px solid #90AF13; }"
-            "QFrame QLabel { border: none; }"
+        card.setStyleSheet(
+            "QFrame { border: 1px solid #d6d6d6; border-radius: 8px; background-color: #f7f7f7; }"
         )
-        return box
-
-    def _create_heading_label(self, text):
-        label = QLabel(text)
-        label.setStyleSheet("font-size: 12px; font-weight: 600; color: #4b4b4b; border: none;")
-        return label
+        return card
 
     def _create_label(self, text):
         label = QLabel(text)
-        label.setStyleSheet("font-size: 11px; color: #4b4b4b; border: none;")
+        label.setStyleSheet("font-size: 11px; color: #3a3a3a; border: none;")
         return label
-
-    def _form_row(self, label, widget):
-        row_widget = QHBoxLayout()
-        row_widget.setContentsMargins(0, 0, 0, 0)
-        row_widget.setSpacing(10)
-        label.setMinimumWidth(150)
-        row_widget.addWidget(label)
-        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        row_widget.addWidget(widget)
-        return row_widget
 
     def _add_form_row(self, layout, row, text, widget):
         label = self._create_label(text)
@@ -1624,7 +1613,6 @@ class StiffenerDetailsTab(QWidget):
     def on_longitudinal_changed(self, text):
         has_longitudinal = text.lower().startswith("yes")
         self.long_thick_combo.setEnabled(has_longitudinal)
-
 
 class CrossBracingDetailsTab(QWidget):
     """Tab for Cross-Bracing Details with visual previews"""
@@ -1648,10 +1636,6 @@ class CrossBracingDetailsTab(QWidget):
         )
         main_layout.addWidget(scroll)
 
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
-
         container = QWidget()
         scroll.setWidget(container)
 
@@ -1661,45 +1645,43 @@ class CrossBracingDetailsTab(QWidget):
 
         primary_card = self._create_card_frame()
         card_layout = QHBoxLayout(primary_card)
-        card_layout.setContentsMargins(16, 16, 16, 16)
-        card_layout.setSpacing(16)
+        card_layout.setContentsMargins(12, 10, 12, 10)
+        card_layout.setSpacing(10)
 
         # Left column (inputs)
         left_column = QWidget()
         left_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         left_layout = QVBoxLayout(left_column)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(14)
+        left_layout.setSpacing(4)
 
         selection_box = self._create_inner_box()
         selection_layout = QGridLayout(selection_box)
-        selection_layout.setContentsMargins(12, 10, 12, 10)
-        selection_layout.setHorizontalSpacing(16)
-        selection_layout.setVerticalSpacing(10)
+        selection_layout.setContentsMargins(8, 4, 8, 4)
+        selection_layout.setHorizontalSpacing(8)
+        selection_layout.setVerticalSpacing(4)
         selection_layout.setColumnMinimumWidth(0, 130)
         selection_layout.setColumnStretch(1, 1)
-
-        selection_layout.addWidget(self._create_heading_label("Select Girders"), 0, 0, 1, 2)
 
         self.select_girders_combo = QComboBox()
         self.select_girders_combo.addItems(["G1 to G2", "G3 to G4", "All"])
         apply_field_style(self.select_girders_combo)
-        selection_layout.addWidget(self._create_label("Select Girders:"), 1, 0)
-        selection_layout.addWidget(self.select_girders_combo, 1, 1)
+        selection_layout.addWidget(self._create_label("Select Girders:"), 0, 0)
+        selection_layout.addWidget(self.select_girders_combo, 0, 1)
 
         self.member_id_combo = QComboBox()
         self.member_id_combo.addItems(["B1-1 to B1-15", "B2-1 to B2-10", "Custom"])
         apply_field_style(self.member_id_combo)
-        selection_layout.addWidget(self._create_label("Member ID:"), 2, 0)
-        selection_layout.addWidget(self.member_id_combo, 2, 1)
+        selection_layout.addWidget(self._create_label("Member ID:"), 1, 0)
+        selection_layout.addWidget(self.member_id_combo, 1, 1)
 
         left_layout.addWidget(selection_box)
 
         inputs_box = self._create_inner_box()
         inputs_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         inputs_layout = QVBoxLayout(inputs_box)
-        inputs_layout.setContentsMargins(12, 10, 12, 10)
-        inputs_layout.setSpacing(10)
+        inputs_layout.setContentsMargins(12, 8, 12, 8)
+        inputs_layout.setSpacing(6)
         inputs_layout.addWidget(self._create_heading_label("Section Inputs:"))
 
         inputs_grid = QGridLayout()
@@ -1879,20 +1861,15 @@ class EndDiaphragmDetailsTab(QWidget):
         )
         main_layout.addWidget(scroll)
 
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
-
         container = QWidget()
         scroll.setWidget(container)
 
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(16)
+        container_layout.setSpacing(8)
 
         self.type_stack = QStackedWidget()
         container_layout.addWidget(self.type_stack)
-        container_layout.addStretch()
 
         self.views = {}
         self.view_order = []
@@ -1927,17 +1904,17 @@ class EndDiaphragmDetailsTab(QWidget):
     def _create_inner_box(self):
         box = QFrame()
         box.setStyleSheet(
-            "QFrame { border: 1px solid #cfcfcf; border-radius: 8px; background-color: #ffffff; }"
+            "QFrame { border: 1px solid #cfcfcf; border-radius: 8px; background-color: #ffffff; padding: 0px; margin: 0px; }"
             "QFrame QComboBox, QFrame QLineEdit { border: none; border-bottom: 1px solid #d0d0d0; border-radius: 0px; min-height: 28px; padding: 4px 8px; background-color: #ffffff; }"
             "QFrame QComboBox:hover, QFrame QLineEdit:hover { border-bottom: 1px solid #5d5d5d; }"
             "QFrame QComboBox:focus, QFrame QLineEdit:focus { border-bottom: 1px solid #90AF13; }"
-            "QFrame QLabel { border: none; }"
+            "QFrame QLabel { border: none; padding: 0px; margin: 0px; }"
         )
         return box
 
     def _create_heading_label(self, text):
         label = QLabel(text)
-        label.setStyleSheet("font-size: 12px; font-weight: 600; color: #4b4b4b; border: none;")
+        label.setStyleSheet("font-size: 12px; font-weight: 600; color: #4b4b4b; border: none; padding: 0px; margin: 0px;")
         return label
 
     def _create_label(self, text):
@@ -1970,24 +1947,23 @@ class EndDiaphragmDetailsTab(QWidget):
         box = self._create_inner_box()
         box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout = QGridLayout(box)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setHorizontalSpacing(16)
-        layout.setVerticalSpacing(10)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setHorizontalSpacing(12)
+        layout.setVerticalSpacing(8)
         layout.setColumnMinimumWidth(0, 120)
         layout.setColumnStretch(1, 1)
-        layout.addWidget(self._create_heading_label("Select Girders"), 0, 0, 1, 2)
 
         girders_combo = QComboBox()
         girders_combo.addItems(["G1 to G2", "G3 to G4", "All"])
         apply_field_style(girders_combo)
-        layout.addWidget(self._create_label("Select Girders:"), 1, 0)
-        layout.addWidget(girders_combo, 1, 1)
+        layout.addWidget(self._create_label("Select Girders:"), 0, 0)
+        layout.addWidget(girders_combo, 0, 1)
 
         member_combo = QComboBox()
         member_combo.addItems(["E1-1, E1-2", "E2-1, E2-2", "Custom"])
         apply_field_style(member_combo)
-        layout.addWidget(self._create_label("Member ID:"), 2, 0)
-        layout.addWidget(member_combo, 2, 1)
+        layout.addWidget(self._create_label("Member ID:"), 1, 0)
+        layout.addWidget(member_combo, 1, 1)
 
         return box
 
@@ -2016,9 +1992,7 @@ class EndDiaphragmDetailsTab(QWidget):
             "Elastic Modulus, Zz (cm3)",
             "Elastic Modulus, Zy (cm3)",
             "Plastic Modulus, Zuz (cm3)",
-            "Plastic Modulus, Zuy (cm3)",
-            "Torsion Constant, It (cm4)",
-            "Warping Constant, Iw (cm6)"
+            "Plastic Modulus, Zuy (cm3)"
         ]
 
         inputs = {}
@@ -2036,25 +2010,27 @@ class EndDiaphragmDetailsTab(QWidget):
     def _build_cross_bracing_view(self):
         view = self._create_card_frame()
         layout = QHBoxLayout(view)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         left_column = QWidget()
         left_layout = QVBoxLayout(left_column)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(14)
+        left_layout.setSpacing(6)
         left_layout.addWidget(self._create_selection_box())
 
         inputs_box = self._create_inner_box()
         inputs_layout = QVBoxLayout(inputs_box)
-        inputs_layout.setContentsMargins(12, 10, 12, 10)
-        inputs_layout.setSpacing(10)
-        inputs_layout.addWidget(self._create_heading_label("Section Inputs:"))
+        inputs_layout.setContentsMargins(12, 4, 12, 8)
+        inputs_layout.setSpacing(6)
+        title = self._create_heading_label("Section Inputs:")
+        title.setStyleSheet("font-size: 12px; font-weight: 600; color: #4b4b4b; border: none; margin-top: 0px; margin-bottom: 2px;")
+        inputs_layout.addWidget(title)
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(12)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(10)
         grid.setColumnMinimumWidth(0, 130)
         grid.setColumnStretch(0, 0)
         grid.setColumnStretch(1, 1)
@@ -2100,57 +2076,66 @@ class EndDiaphragmDetailsTab(QWidget):
         self._add_grid_row(grid, row, "Spacing:", spacing_input)
 
         inputs_layout.addLayout(grid)
+        inputs_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         left_layout.addWidget(inputs_box)
+        left_layout.addStretch()
 
         layout.addWidget(left_column)
 
         right_column = QWidget()
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(14)
+        right_layout.setSpacing(10)
 
         type_box = self._create_inner_box()
+        type_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         type_layout = QVBoxLayout(type_box)
-        type_layout.setContentsMargins(12, 10, 12, 10)
-        type_layout.setSpacing(8)
+        type_layout.setContentsMargins(12, 8, 12, 10)
+        type_layout.setSpacing(6)
         type_layout.addWidget(self._create_heading_label("Type of Bracing"))
-        type_layout.addWidget(self._create_image_placeholder("Bracing Layout", 200))
+        type_layout.addWidget(self._create_image_placeholder("Bracing Layout", 170))
         right_layout.addWidget(type_box)
 
         for title in ["Bracing", "Top Bracket", "Bottom Bracket"]:
             preview_box = self._create_inner_box()
+            preview_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             preview_layout = QVBoxLayout(preview_box)
-            preview_layout.setContentsMargins(12, 10, 12, 10)
+            preview_layout.setContentsMargins(12, 8, 12, 8)
             preview_layout.setSpacing(6)
             preview_layout.addWidget(self._create_heading_label(title))
             preview_layout.addWidget(self._create_image_placeholder("Preview", 110))
             right_layout.addWidget(preview_box)
 
+        right_layout.addStretch()
         layout.addWidget(right_column)
+        layout.setStretch(0, 3)
+        layout.setStretch(1, 4)
         return view, type_selector
 
     def _build_rolled_view(self):
         view = self._create_card_frame()
         layout = QHBoxLayout(view)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         left_column = QWidget()
         left_layout = QVBoxLayout(left_column)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(14)
+        left_layout.setSpacing(8)
         left_layout.addWidget(self._create_selection_box())
 
         inputs_box = self._create_inner_box()
         inputs_layout = QVBoxLayout(inputs_box)
-        inputs_layout.setContentsMargins(12, 10, 12, 10)
-        inputs_layout.setSpacing(10)
-        inputs_layout.addWidget(self._create_heading_label("Section Inputs"))
+        inputs_layout.setContentsMargins(12, 4, 12, 8)
+        inputs_layout.setSpacing(6)
+        title = self._create_heading_label("Section Inputs")
+        title.setStyleSheet("font-size: 12px; font-weight: 600; color: #4b4b4b; border: none; margin-top: 0px; margin-bottom: 2px;")
+        inputs_layout.addWidget(title)
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(12)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(8)
         grid.setColumnMinimumWidth(0, 130)
         grid.setColumnStretch(0, 0)
         grid.setColumnStretch(1, 1)
@@ -2175,24 +2160,29 @@ class EndDiaphragmDetailsTab(QWidget):
         self._add_grid_row(grid, row, "IS Section:", is_section_combo)
 
         inputs_layout.addLayout(grid)
+        inputs_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         left_layout.addWidget(inputs_box)
+        left_layout.addStretch()
         layout.addWidget(left_column)
 
         right_column = QWidget()
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(14)
+        right_layout.setSpacing(10)
 
         image_box = self._create_inner_box()
+        image_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         image_layout = QVBoxLayout(image_box)
-        image_layout.setContentsMargins(12, 10, 12, 10)
-        image_layout.setSpacing(8)
+        image_layout.setContentsMargins(12, 8, 12, 10)
+        image_layout.setSpacing(6)
         image_layout.addWidget(self._create_heading_label("Dynamic Image"))
-        image_layout.addWidget(self._create_image_placeholder("Rolled Section", 180))
+        image_layout.addWidget(self._create_image_placeholder("Rolled Section", 170))
         right_layout.addWidget(image_box)
 
         props_box, _ = self._create_section_properties_box("Section Properties:")
+        props_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         right_layout.addWidget(props_box)
+        right_layout.addStretch()
 
         layout.addWidget(right_column)
         return view, type_selector
@@ -2200,25 +2190,25 @@ class EndDiaphragmDetailsTab(QWidget):
     def _build_welded_view(self):
         view = self._create_card_frame()
         layout = QHBoxLayout(view)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         left_column = QWidget()
         left_layout = QVBoxLayout(left_column)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(14)
+        left_layout.setSpacing(8)
         left_layout.addWidget(self._create_selection_box())
 
         inputs_box = self._create_inner_box()
         inputs_layout = QVBoxLayout(inputs_box)
-        inputs_layout.setContentsMargins(12, 10, 12, 10)
-        inputs_layout.setSpacing(10)
+        inputs_layout.setContentsMargins(12, 8, 12, 10)
+        inputs_layout.setSpacing(8)
         inputs_layout.addWidget(self._create_heading_label("Section Inputs:"))
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(12)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(10)
         grid.setColumnMinimumWidth(0, 150)
         grid.setColumnStretch(0, 0)
         grid.setColumnStretch(1, 1)
@@ -2267,24 +2257,29 @@ class EndDiaphragmDetailsTab(QWidget):
         self._add_grid_row(grid, row, "Bearing Stiffener Thickness (mm):", bearing_thickness)
 
         inputs_layout.addLayout(grid)
+        inputs_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         left_layout.addWidget(inputs_box)
+        left_layout.addStretch()
         layout.addWidget(left_column)
 
         right_column = QWidget()
         right_layout = QVBoxLayout(right_column)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(14)
+        right_layout.setSpacing(10)
 
         image_box = self._create_inner_box()
+        image_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         image_layout = QVBoxLayout(image_box)
-        image_layout.setContentsMargins(12, 10, 12, 10)
-        image_layout.setSpacing(8)
+        image_layout.setContentsMargins(12, 8, 12, 10)
+        image_layout.setSpacing(6)
         image_layout.addWidget(self._create_heading_label("Dynamic Image"))
-        image_layout.addWidget(self._create_image_placeholder("Welded Section", 180))
+        image_layout.addWidget(self._create_image_placeholder("Welded Section", 170))
         right_layout.addWidget(image_box)
 
         props_box, _ = self._create_section_properties_box("Section Properties:")
+        props_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         right_layout.addWidget(props_box)
+        right_layout.addStretch()
 
         layout.addWidget(right_column)
         return view, type_selector
@@ -2316,8 +2311,46 @@ class CustomVehicleDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Live Load Custom Vehicle Add/Edit")
         self.setModal(True)
-        self.setMinimumWidth(520)
-        self.setStyleSheet("background-color: #ffffff;")
+        self.setMinimumWidth(420)
+        self.setMinimumHeight(500)
+        self.setStyleSheet("""
+            QDialog { background-color: #f5f5f5; }
+            QLabel { color: #2b2b2b; font-size: 11px; background: transparent; }
+            QLineEdit { 
+                background-color: #ffffff; 
+                border: 1px solid #8a8a8a; 
+                border-radius: 4px; 
+                padding: 4px 8px; 
+                min-height: 24px;
+                color: #2b2b2b;
+            }
+            QLineEdit:focus { border: 1px solid #5a5a5a; }
+            QLineEdit:read-only { background-color: #f0f0f0; color: #5a5a5a; }
+            QPushButton {
+                background-color: #ffffff;
+                color: #2b2b2b;
+                border: 1px solid #8a8a8a;
+                border-radius: 4px;
+                padding: 5px 12px;
+                min-width: 50px;
+            }
+            QPushButton:hover { background-color: #e8e8e8; }
+            QPushButton:pressed { background-color: #d8d8d8; }
+            QTableWidget {
+                background-color: #ffffff;
+                border: 1px solid #8a8a8a;
+                gridline-color: #d0d0d0;
+                color: #2b2b2b;
+            }
+            QTableWidget::item { padding: 4px; }
+            QHeaderView::section {
+                background-color: #f0f0f0;
+                color: #2b2b2b;
+                border: 1px solid #d0d0d0;
+                padding: 4px;
+                font-weight: 600;
+            }
+        """)
         self.init_ui()
 
     def init_ui(self):
@@ -2325,74 +2358,88 @@ class CustomVehicleDialog(QDialog):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
+        # Vehicle Name row
         name_row = QHBoxLayout()
         name_row.setSpacing(10)
         name_label = QLabel("Vehicle Name:")
-        name_label.setMinimumWidth(120)
+        name_label.setStyleSheet("font-weight: 600;")
         self.vehicle_name_input = QLineEdit()
-        apply_field_style(self.vehicle_name_input)
+        self.vehicle_name_input.setFixedWidth(120)
         name_row.addWidget(name_label)
         name_row.addWidget(self.vehicle_name_input)
+        name_row.addStretch()
         layout.addLayout(name_row)
 
-        pd_row = QHBoxLayout()
-        pd_row.setSpacing(12)
+        # P# D# row with Add/Modify/Delete buttons
+        pd_button_row = QHBoxLayout()
+        pd_button_row.setSpacing(8)
+
+        p_label = QLabel("P#")
         self.P_input = QLineEdit()
+        self.P_input.setFixedWidth(50)
+        pd_button_row.addWidget(p_label)
+        pd_button_row.addWidget(self.P_input)
+
+        d_label = QLabel("D#")
         self.D_input = QLineEdit()
-        for label_text, field in (("P#", self.P_input), ("D#", self.D_input)):
-            sub_layout = QHBoxLayout()
-            sub_layout.setSpacing(6)
-            lbl = QLabel(label_text)
-            field.setMaximumWidth(90)
-            apply_field_style(field)
-            sub_layout.addWidget(lbl)
-            sub_layout.addWidget(field)
-            pd_row.addLayout(sub_layout)
-        pd_row.addStretch()
-        layout.addLayout(pd_row)
+        self.D_input.setFixedWidth(50)
+        pd_button_row.addWidget(d_label)
+        pd_button_row.addWidget(self.D_input)
 
-        table_row = QHBoxLayout()
-        table_row.setSpacing(12)
+        pd_button_row.addStretch()
 
+        self.add_axle_button = QPushButton("Add")
+        self.modify_axle_button = QPushButton("Modify")
+        self.delete_axle_button = QPushButton("Delete")
+        pd_button_row.addWidget(self.add_axle_button)
+        pd_button_row.addWidget(self.modify_axle_button)
+        pd_button_row.addWidget(self.delete_axle_button)
+
+        layout.addLayout(pd_button_row)
+
+        # Table and diagram row
+        table_diagram_row = QHBoxLayout()
+        table_diagram_row.setSpacing(12)
+
+        # Axle table
         self.axle_table = QTableWidget()
         self.axle_table.setColumnCount(3)
         self.axle_table.setHorizontalHeaderLabels(["No.", "Load (kN)", "Spacing (m)"])
         self.axle_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.axle_table.verticalHeader().setVisible(False)
-        self.axle_table.setMinimumHeight(160)
-        table_row.addWidget(self.axle_table, 3)
+        self.axle_table.setMinimumHeight(120)
+        self.axle_table.setMaximumHeight(140)
+        table_diagram_row.addWidget(self.axle_table, 1)
 
-        diagram = QLabel("Axle Layout")
-        diagram.setAlignment(Qt.AlignCenter)
-        diagram.setMinimumWidth(150)
-        diagram.setStyleSheet("QLabel { border: 1px solid #cfcfcf; border-radius: 8px; background: #f7f7f7; }")
-        table_row.addWidget(diagram, 2)
+        # Axle diagram placeholder
+        axle_diagram = QLabel("Axle Layout Diagram")
+        axle_diagram.setAlignment(Qt.AlignCenter)
+        axle_diagram.setMinimumHeight(120)
+        axle_diagram.setStyleSheet("""
+            QLabel {
+                border: 1px solid #8a8a8a;
+                border-radius: 4px;
+                background: #ffffff;
+                color: #6a6a6a;
+                font-size: 10px;
+            }
+        """)
+        table_diagram_row.addWidget(axle_diagram, 1)
 
-        layout.addLayout(table_row)
+        layout.addLayout(table_diagram_row)
 
-        button_row = QHBoxLayout()
-        button_row.setSpacing(10)
-        self.add_axle_button = QPushButton("Add")
-        self.modify_axle_button = QPushButton("Modify")
-        self.delete_axle_button = QPushButton("Delete")
-        for btn in (self.add_axle_button, self.modify_axle_button, self.delete_axle_button):
-            btn.setFixedWidth(90)
-            button_row.addWidget(btn)
-        button_row.addStretch()
-        layout.addLayout(button_row)
-
+        # Input fields grid
         fields_grid = QGridLayout()
-        fields_grid.setContentsMargins(0, 0, 0, 0)
-        fields_grid.setHorizontalSpacing(14)
+        fields_grid.setContentsMargins(0, 8, 0, 0)
+        fields_grid.setHorizontalSpacing(12)
         fields_grid.setVerticalSpacing(10)
-        fields_grid.setColumnMinimumWidth(0, 260)
-        fields_grid.setColumnStretch(1, 1)
+        fields_grid.setColumnMinimumWidth(0, 240)
 
         field_labels = [
             "Minimum nose to tail distance (m):",
             "Width of Wheel, w (mm):",
-            "Minimum Clearance from Carriageway Edge, f (mm):",
-            "Minimum Clearance from Crossing Vehicles, g (mm):",
+            "Minimum Clearance from Carriageway\nEdge, f (mm):",
+            "Minimum Clearance from Crossing Vehicles,\ng (mm):",
             "Wheel Spacing in Transverse Direction (m):",
             "Impact Factor:",
         ]
@@ -2403,18 +2450,31 @@ class CustomVehicleDialog(QDialog):
             field = QLineEdit()
             if "Impact" in text:
                 field.setText("0.25")
-            apply_field_style(field)
-            fields_grid.addWidget(lbl, row, 0)
-            fields_grid.addWidget(field, row, 1)
+                field.setReadOnly(True)
+            field.setFixedWidth(100)
+            fields_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
+            fields_grid.addWidget(field, row, 1, Qt.AlignLeft | Qt.AlignVCenter)
             self.custom_fields[text] = field
 
         layout.addLayout(fields_grid)
 
-        diagram_bottom = QLabel("Clear Carriageway Width Diagram")
-        diagram_bottom.setAlignment(Qt.AlignCenter)
-        diagram_bottom.setMinimumHeight(140)
-        diagram_bottom.setStyleSheet("QLabel { border: 1px solid #cfcfcf; border-radius: 8px; background: #fafafa; }")
-        layout.addWidget(diagram_bottom)
+        # Bottom diagram - Clear Carriageway Width
+        bottom_diagram_label = QLabel("CLEAR CARRIAGEWAY WIDTH")
+        bottom_diagram_label.setAlignment(Qt.AlignCenter)
+        bottom_diagram_label.setStyleSheet("font-size: 9px; font-weight: 600; color: #5a5a5a; background: transparent;")
+        layout.addWidget(bottom_diagram_label)
+
+        bottom_diagram = QLabel("")
+        bottom_diagram.setAlignment(Qt.AlignCenter)
+        bottom_diagram.setMinimumHeight(80)
+        bottom_diagram.setStyleSheet("""
+            QLabel {
+                border: 1px solid #8a8a8a;
+                border-radius: 4px;
+                background: #ffffff;
+            }
+        """)
+        layout.addWidget(bottom_diagram)
 
         layout.addStretch()
 
@@ -2465,12 +2525,15 @@ class LoadingTab(QWidget):
 
         content_row = QHBoxLayout()
         content_row.setContentsMargins(0, 0, 0, 0)
-        content_row.setSpacing(18)
+        content_row.setSpacing(16)
 
         left_card = self._create_card()
+        left_card.setStyleSheet(
+            "QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }"
+        )
         left_layout = QVBoxLayout(left_card)
-        left_layout.setContentsMargins(18, 18, 18, 18)
-        left_layout.setSpacing(18)
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.setSpacing(16)
 
         self._add_load_section(left_layout, "Dead Load (DL):", [
             ("Include Member Self Weight:", self._create_yes_no_combo()),
@@ -2491,21 +2554,25 @@ class LoadingTab(QWidget):
         left_layout.addStretch()
 
         right_card = self._create_card()
-        right_card.setMinimumWidth(260)
+        right_card.setStyleSheet(
+            "QFrame { border: 1px solid #9c9c9c; border-radius: 10px; background-color: #c8c8c8; }"
+        )
+        right_card.setMinimumWidth(270)
+        right_card.setMinimumHeight(360)
         right_layout = QVBoxLayout(right_card)
         right_layout.setContentsMargins(18, 18, 18, 18)
         right_layout.setSpacing(12)
         description_label = QLabel("Description Box")
         description_label.setAlignment(Qt.AlignCenter)
-        description_label.setStyleSheet("font-size: 14px; color: #6a6a6a;")
-        description_label.setMinimumHeight(260)
+        description_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #000000;")
+        description_label.setMinimumHeight(320)
         right_layout.addWidget(description_label)
 
         content_row.addWidget(left_card, 3)
         content_row.addWidget(right_card, 2)
 
         page_layout.addLayout(content_row)
-        page_layout.addStretch()
+        page_layout.addSpacing(4)
         return page
 
     def _build_live_load_tab(self):
@@ -2516,15 +2583,18 @@ class LoadingTab(QWidget):
         page_layout.setSpacing(12)
 
         content_row = QHBoxLayout()
-        content_row.setSpacing(18)
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(16)
 
         left_card = self._create_card()
+        left_card.setStyleSheet("QFrame { border: 1px solid #b2b2b2; border-radius: 10px; background-color: #ffffff; }")
         left_layout = QVBoxLayout(left_card)
-        left_layout.setContentsMargins(18, 18, 18, 18)
-        left_layout.setSpacing(16)
+        left_layout.setContentsMargins(14, 14, 14, 14)
+        left_layout.setSpacing(8)
 
+        # Title without box
         title = QLabel("Live Load (LL) Inputs:")
-        title.setStyleSheet("font-size: 13px; font-weight: 600; color: #3a3a3a;")
+        title.setStyleSheet("font-size: 12px; font-weight: 700; color: #3a3a3a; background: transparent; border: none;")
         left_layout.addWidget(title)
 
         irc_vehicles = [
@@ -2533,73 +2603,113 @@ class LoadingTab(QWidget):
         ]
         self._add_checkbox_section(left_layout, "Vehicles from IRC 6:", irc_vehicles)
 
+        # Custom Vehicle header with Add/Edit buttons
         custom_header = QHBoxLayout()
-        custom_header.setSpacing(10)
+        custom_header.setSpacing(8)
         custom_label = QLabel("Custom Vehicle:")
-        custom_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3a3a3a;")
+        custom_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #3a3a3a; background: transparent; border: none;")
         custom_header.addWidget(custom_label)
         custom_header.addStretch()
         self.custom_vehicle_add_button = QPushButton("Add")
         self.custom_vehicle_edit_button = QPushButton("Edit")
         for btn in (self.custom_vehicle_add_button, self.custom_vehicle_edit_button):
-            btn.setFixedWidth(70)
+            btn.setFixedWidth(50)
+            btn.setStyleSheet(
+                "QPushButton { background: #ffffff; color: #2f2f2f; border: 1px solid #7a7a7a; border-radius: 4px; padding: 4px 10px; }"
+                "QPushButton:hover { background: #f0f0f0; }"
+                "QPushButton:pressed { background: #e0e0e0; }"
+            )
             custom_header.addWidget(btn)
         left_layout.addLayout(custom_header)
 
-        custom_grid = QGridLayout()
-        custom_grid.setContentsMargins(0, 0, 0, 0)
-        custom_grid.setHorizontalSpacing(12)
-        custom_grid.setVerticalSpacing(10)
-        custom_grid.setColumnStretch(1, 1)
-
-        self.custom_vehicle_name_inputs = []
+        # Vehicle Name 1 and 2 as simple checkbox rows (like reference image 2)
+        self.custom_vehicle_checkboxes = []
+        checkbox_style = (
+            "QCheckBox::indicator { width: 18px; height: 18px; background: #ffffff; border: 1px solid #7a7a7a; border-radius: 3px; }"
+            "QCheckBox::indicator:checked { background: #ffffff; border: 1px solid #5c5c5c; }"
+            "QCheckBox::indicator:checked:enabled { image: none; }"
+        )
         for index in range(2):
+            row_layout = QHBoxLayout()
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(8)
             label = QLabel(f"Vehicle Name {index + 1}")
-            line_edit = QLineEdit()
-            apply_field_style(line_edit)
+            label.setStyleSheet("font-size: 11px; font-style: italic; color: #4b4b4b; background: transparent; border: none;")
             checkbox = QCheckBox()
-            custom_grid.addWidget(label, index, 0)
-            custom_grid.addWidget(line_edit, index, 1)
-            custom_grid.addWidget(checkbox, index, 2, Qt.AlignCenter)
-            self.custom_vehicle_name_inputs.append((line_edit, checkbox))
+            checkbox.setStyleSheet(checkbox_style)
+            checkbox.setChecked(False)
+            row_layout.addWidget(label)
+            row_layout.addStretch()
+            row_layout.addWidget(checkbox)
+            left_layout.addLayout(row_layout)
+            self.custom_vehicle_checkboxes.append(checkbox)
 
-        left_layout.addLayout(custom_grid)
+        # Braking Load from Vehicles section - includes IRC vehicles + Vehicle Name 1/2
+        braking_vehicles = irc_vehicles + ["Vehicle Name 1", "Vehicle Name 2"]
+        self._add_checkbox_section(left_layout, "Braking Load from Vehicles:", braking_vehicles)
 
-        self._add_checkbox_section(left_layout, "Braking Load from Vehicles:", irc_vehicles)
+        # Bottom inputs with aligned widths
+        input_width = 120
 
+        # Eccentricity row
         ecc_row = QHBoxLayout()
-        ecc_row.setSpacing(12)
+        ecc_row.setSpacing(10)
         ecc_label = QLabel("Eccentricity from top of Deck (m):")
+        ecc_label.setStyleSheet("font-size: 11px; font-weight: 600; color: #3a3a3a; background: transparent; border: none;")
+        ecc_label.setMinimumWidth(200)
         self.eccentricity_input = QLineEdit()
+        self.eccentricity_input.setFixedWidth(input_width)
         apply_field_style(self.eccentricity_input)
         ecc_row.addWidget(ecc_label)
         ecc_row.addWidget(self.eccentricity_input)
+        ecc_row.addStretch()
         left_layout.addLayout(ecc_row)
 
+        # Footpath Pressure row with dropdown
         footpath_row = QHBoxLayout()
-        footpath_row.setSpacing(12)
-        footpath_label = QLabel("Footpath Pressure (kN/mm^2):")
+        footpath_row.setSpacing(10)
+        footpath_label = QLabel("Footpath Pressure (kN/mm2 ):")
+        footpath_label.setStyleSheet("font-size: 11px; font-weight: 600; color: #3a3a3a; background: transparent; border: none;")
+        footpath_label.setMinimumWidth(200)
         self.footpath_mode_combo = QComboBox()
         self.footpath_mode_combo.addItems(["Automatic", "User-defined"])
+        self.footpath_mode_combo.setFixedWidth(input_width)
         apply_field_style(self.footpath_mode_combo)
-        self.footpath_value_input = QLineEdit()
-        self.footpath_value_input.setPlaceholderText("Value")
-        apply_field_style(self.footpath_value_input)
         footpath_row.addWidget(footpath_label)
         footpath_row.addWidget(self.footpath_mode_combo)
-        footpath_row.addWidget(self.footpath_value_input)
+        footpath_row.addStretch()
         left_layout.addLayout(footpath_row)
+
+        # Value input below footpath (aligned with dropdown above)
+        value_row = QHBoxLayout()
+        value_row.setContentsMargins(0, 0, 0, 0)
+        value_row.setSpacing(10)
+        value_spacer = QLabel("")
+        value_spacer.setMinimumWidth(200)
+        self.footpath_value_input = QLineEdit()
+        self.footpath_value_input.setPlaceholderText("Value")
+        self.footpath_value_input.setFixedWidth(input_width)
+        apply_field_style(self.footpath_value_input)
+        value_row.addWidget(value_spacer)
+        value_row.addWidget(self.footpath_value_input)
+        value_row.addStretch()
+        left_layout.addLayout(value_row)
 
         left_layout.addStretch()
 
+        # Right description card
         right_card = self._create_card()
-        right_card.setMinimumWidth(280)
+        right_card.setStyleSheet("QFrame { border: 1px solid #9c9c9c; border-radius: 10px; background-color: #d4d4d4; }")
+        right_card.setMinimumWidth(260)
+        right_card.setMinimumHeight(420)
         right_layout = QVBoxLayout(right_card)
-        right_layout.setContentsMargins(18, 18, 18, 18)
+        right_layout.setContentsMargins(16, 16, 16, 16)
         right_layout.setSpacing(10)
+
+        # Description Box title - no box around it
         desc_label = QLabel("Description Box")
         desc_label.setAlignment(Qt.AlignCenter)
-        desc_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #3a3a3a;")
+        desc_label.setStyleSheet("font-size: 12px; font-weight: 700; color: #000000; background: transparent; border: none;")
         right_layout.addWidget(desc_label)
 
         description_text = (
@@ -2615,14 +2725,14 @@ class LoadingTab(QWidget):
         )
         description_label = QLabel(description_text)
         description_label.setWordWrap(True)
-        description_label.setStyleSheet("font-size: 11px; color: #4b4b4b;")
+        description_label.setStyleSheet("font-size: 11px; color: #4b4b4b; background: transparent; border: none;")
         right_layout.addWidget(description_label)
         right_layout.addStretch()
 
         content_row.addWidget(left_card, 3)
         content_row.addWidget(right_card, 2)
         page_layout.addLayout(content_row)
-        page_layout.addStretch()
+        page_layout.addSpacing(4)
 
         self.custom_vehicle_add_button.clicked.connect(self.show_custom_vehicle_dialog)
         self.custom_vehicle_edit_button.clicked.connect(self.show_custom_vehicle_dialog)
@@ -2633,29 +2743,35 @@ class LoadingTab(QWidget):
 
     def _add_load_section(self, parent_layout, title, rows):
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3e3e3e;")
+        title_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3e3e3e; background: transparent; border: none;")
         parent_layout.addWidget(title_label)
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(14)
-        grid.setVerticalSpacing(10)
-        grid.setColumnMinimumWidth(0, 200)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(12)
+        grid.setColumnMinimumWidth(0, 230)
         grid.setColumnStretch(0, 0)
         grid.setColumnStretch(1, 1)
 
+        field_width = 170
+
         for row_index, (label_text, widget) in enumerate(rows):
             label = QLabel(label_text)
-            label.setStyleSheet("font-size: 11px; color: #4b4b4b;")
+            label.setStyleSheet("font-size: 11px; color: #4b4b4b; background: transparent; border: none;")
             grid.addWidget(label, row_index, 0, Qt.AlignLeft | Qt.AlignVCenter)
-            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            if isinstance(widget, QComboBox):
+                widget.setFixedWidth(field_width)
+            elif isinstance(widget, QLineEdit):
+                widget.setFixedWidth(field_width)
             grid.addWidget(widget, row_index, 1)
 
         parent_layout.addLayout(grid)
 
     def _add_checkbox_section(self, parent_layout, title, items):
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3e3e3e;")
+        title_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #3e3e3e; background: transparent; border: none;")
         parent_layout.addWidget(title_label)
 
         grid = QGridLayout()
@@ -2664,10 +2780,22 @@ class LoadingTab(QWidget):
         grid.setVerticalSpacing(8)
         grid.setColumnStretch(0, 1)
 
+        # Simple checkbox style that shows a checkmark when checked
+        checkbox_style = (
+            "QCheckBox::indicator { width: 18px; height: 18px; background: #ffffff; border: 1px solid #7a7a7a; border-radius: 3px; }"
+            "QCheckBox::indicator:checked { background: #ffffff; border: 1px solid #5c5c5c; }"
+        )
+
         for row, name in enumerate(items):
             label = QLabel(name)
-            label.setStyleSheet("font-size: 11px; color: #4b4b4b;")
+            # Make Vehicle Name entries italic
+            if "Vehicle Name" in name:
+                label.setStyleSheet("font-size: 11px; font-style: italic; color: #4b4b4b; background: transparent; border: none; padding: 0px;")
+            else:
+                label.setStyleSheet("font-size: 11px; color: #4b4b4b; background: transparent; border: none; padding: 0px;")
             checkbox = QCheckBox()
+            checkbox.setStyleSheet(checkbox_style)
+            checkbox.setChecked(False)
             grid.addWidget(label, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
             grid.addWidget(checkbox, row, 1, Qt.AlignRight | Qt.AlignVCenter)
 
