@@ -207,7 +207,7 @@ VALUES_WARPING_RESTRAINT = ["Both Flange Restraint", "No Restraint"]
 VALUES_WEB_TYPE = ["Thin Web", "Thick Web"]
 VALUES_STIFFENER_DESIGN = ["Simple Post", "Tension Field"]
 VALUES_CROSS_BRACING_TYPE = ["K-bracing", "K-bracing with top bracket", "X-bracing", "X-bracing with bottom bracket", "X-bracing with top and bottom brackets"]
-VALUES_END_DIAPHRAGM_TYPE = ["Same as cross-bracing", "Rolled Beam Section", "Plate Girder Section"]
+VALUES_END_DIAPHRAGM_TYPE = ["Cross Bracing", "Rolled Beam", "Welded Beam"]
 VALUES_WEARING_COAT_MATERIAL = ["Concrete", "Bituminous", "Other"]
 VALUES_RAILING_TYPE = [
     "IRC 5 - RCC Railing",

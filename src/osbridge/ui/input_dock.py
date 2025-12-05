@@ -70,7 +70,7 @@ def apply_field_style(widget):
     if isinstance(widget, QComboBox):
         style = """
             QComboBox{
-                padding: 2px;
+                padding: 1px 7px;
                 border: 1px solid black;
                 border-radius: 5px;
                 background-color: white;
@@ -1316,7 +1316,7 @@ class InputDock(QWidget):
         location_box_layout.setSpacing(8)
 
         loc_header = QHBoxLayout()
-        loc_title = QLabel("Project Location")
+        loc_title = QLabel("Project Location*")
         loc_title.setStyleSheet("""
             QLabel {
                 color: #000000;
@@ -1447,7 +1447,7 @@ class InputDock(QWidget):
         
         # Span
         span_row = QHBoxLayout()
-        span_label = QLabel("Span (m)")
+        span_label = QLabel("Span*")
         span_label.setStyleSheet("""
             QLabel {
                 color: #000000;
@@ -1467,7 +1467,7 @@ class InputDock(QWidget):
         
         # Carriageway Width
         carriageway_row = QHBoxLayout()
-        carriageway_label = QLabel("Carriageway (m)")
+        carriageway_label = QLabel("Carriageway Width*")
         carriageway_label.setStyleSheet("""
             QLabel {
                 color: #000000;
@@ -1549,8 +1549,8 @@ class InputDock(QWidget):
         self.skew_input.setObjectName(KEY_SKEW_ANGLE)
         apply_field_style(self.skew_input)
         self.skew_input.setValidator(QDoubleValidator(SKEW_ANGLE_MIN, SKEW_ANGLE_MAX, 1))
-        self.skew_input.setText(str(SKEW_ANGLE_DEFAULT))
-        self.skew_input.setPlaceholderText(f"Default: {SKEW_ANGLE_DEFAULT}°")
+        #self.skew_input.setText(f"{str(SKEW_ANGLE_DEFAULT)}°")
+        self.skew_input.setPlaceholderText(f"{SKEW_ANGLE_MIN} - {SKEW_ANGLE_MAX}°")
         skew_row.addWidget(skew_label)
         skew_row.addWidget(self.skew_input, 1)
         geo_box_layout.addLayout(skew_row)
@@ -1861,14 +1861,24 @@ class InputDock(QWidget):
         
         if self.additional_inputs_window is None or not self.additional_inputs_window.isVisible():
             self.additional_inputs_window = QDialog(self)
+            self.additional_inputs_window.setObjectName("AdditionalInputs")
             self.additional_inputs_window.setWindowTitle("Additional Inputs - Manual Bridge Parameter Definition")
-            self.additional_inputs_window.resize(900, 700)
+            self.additional_inputs_window.resize(1024, 720)
+            self.additional_inputs_window.setMinimumSize(820, 520)
+            self.additional_inputs_window.setSizeGripEnabled(True)
             
             layout = QVBoxLayout(self.additional_inputs_window)
             layout.setContentsMargins(0, 0, 0, 0)
             
-            self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, carriageway_width, self.additional_inputs_window)
-            layout.addWidget(self.additional_inputs_widget)
+            scroll_area = QScrollArea(self.additional_inputs_window)
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            scroll_area.setFrameShape(QFrame.NoFrame)
+            scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+            layout.addWidget(scroll_area)
+
+            self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, carriageway_width)
+            scroll_area.setWidget(self.additional_inputs_widget)
             self.additional_inputs_window.destroyed.connect(lambda _=None: self._handle_additional_inputs_closed())
             self._set_additional_inputs_enabled(not self.is_locked)
             

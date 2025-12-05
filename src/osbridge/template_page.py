@@ -120,6 +120,17 @@ class CustomWindow(QWidget):
 
         # Main horizontal splitter
         main_splitter = QSplitter(Qt.Horizontal, body_widget)
+        main_splitter.setObjectName("primary_splitter")
+        main_splitter.setHandleWidth(6)
+        main_splitter.setStyleSheet(
+            "QSplitter#primary_splitter::handle {"
+            "   background-color: #90AF13;"
+            "   border: none;"
+            "}"
+            "QSplitter#primary_splitter::handle:hover {"
+            "   background-color: #a3c628;"
+            "}"
+        )
 
         # Input dock
         input_dock = InputDock(backend=self.backend, parent=self)
