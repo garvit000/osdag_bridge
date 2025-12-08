@@ -136,15 +136,87 @@ def apply_field_style(widget):
         """)
 
 
+class CustomTitleBar(QWidget):
+    """Custom title bar for dialogs with Osdag styling"""
+    def __init__(self, title="Dialog", parent=None):
+        super().__init__(parent)
+        from PySide6.QtCore import QPoint
+        
+        self._drag_pos = QPoint()
+        self.setObjectName("CustomTitleBar")
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFixedHeight(36)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet("background-color: #f5f5f5; border-bottom: 1px solid #d0d0d0;")
+
+        # Add Osdag logo icon
+        self.logo_label = QSvgWidget(":/vectors/Osdag_logo.svg", self)
+        self.logo_label.setObjectName("LogoLabel")
+        self.logo_label.setFixedSize(22, 22)
+
+        # Title label
+        self.title_label = QLabel(title, self)
+        self.title_label.setObjectName("TitleLabel")
+        self.title_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        self.title_label.setStyleSheet("font-size: 12px; font-weight: 500; color: #2b2b2b; background: transparent; border: none;")
+
+        # Close button
+        self.btn_close = QPushButton("✕", self)
+        self.btn_close.setObjectName("CloseButton")
+        self.btn_close.setToolTip("Close")
+        self.btn_close.setFixedSize(36, 36)
+        self.btn_close.setStyleSheet(
+            "QPushButton { background: transparent; border: none; font-size: 14px; color: #5b5b5b; }"
+            "QPushButton:hover { background: #e81123; color: #ffffff; }"
+        )
+        self.btn_close.clicked.connect(self._close_parent)
+
+        # Layout
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 0, 0)
+        layout.setSpacing(10)
+        layout.addWidget(self.logo_label)
+        layout.addWidget(self.title_label, 1)
+        layout.addWidget(self.btn_close)
+
+    def setTitle(self, title):
+        self.title_label.setText(title)
+
+    def _close_parent(self):
+        if self.parent():
+            self.parent().close()
+
+    def mousePressEvent(self, event):
+        from PySide6.QtCore import QPoint
+        if event.button() == Qt.LeftButton:
+            if self.parent() and self.parent().isWindow():
+                self._drag_pos = event.globalPosition().toPoint() - self.parent().frameGeometry().topLeft()
+                event.accept()
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.LeftButton and 
+            not self._drag_pos.isNull() and 
+            self.parent() and 
+            self.parent().isWindow()):
+            self.parent().move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        from PySide6.QtCore import QPoint
+        if event.button() == Qt.LeftButton:
+            self._drag_pos = QPoint()
+            event.accept()
+
+
 class MaterialPropertiesDialog(QDialog):
     MEMBER_OPTIONS = ["Girder", "Cross Bracing", "End Diaphragm", "Deck"]
     STEEL_MEMBERS = {"Girder", "Cross Bracing", "End Diaphragm"}
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Material Properties")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setMinimumWidth(580)
-        self.setStyleSheet("background-color: white;")
+        self.setStyleSheet("QDialog { background-color: #ffffff; border: 1px solid #b2b2b2; }")
 
         self.parent_dock = parent
         self._loading = False
@@ -159,7 +231,18 @@ class MaterialPropertiesDialog(QDialog):
         apply_field_style(self.material_combo)
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 16, 20, 16)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Custom title bar
+        self.title_bar = CustomTitleBar("Material Properties", self)
+        main_layout.addWidget(self.title_bar)
+
+        # Content container
+        content = QWidget()
+        content.setStyleSheet("background: #ffffff;")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(20, 16, 20, 16)
 
         # Create a container widget for all form fields
         form_container = QWidget()
@@ -195,7 +278,7 @@ class MaterialPropertiesDialog(QDialog):
         material_row.addStretch()
         form_layout.addLayout(material_row)
         
-        main_layout.addWidget(form_container)
+        content_layout.addWidget(form_container)
 
         self.stack = QStackedWidget()
         self.stack.setContentsMargins(0, 0, 0, 0)
@@ -203,7 +286,7 @@ class MaterialPropertiesDialog(QDialog):
         self.deck_page = self._build_deck_form()
         self.stack.addWidget(self.steel_page)
         self.stack.addWidget(self.deck_page)
-        main_layout.addWidget(self.stack)
+        content_layout.addWidget(self.stack)
 
         # Updated default row with proper alignment
         default_row = QHBoxLayout()
@@ -242,7 +325,10 @@ class MaterialPropertiesDialog(QDialog):
         
         default_row.addWidget(default_label)
         default_row.addWidget(checkbox_container)
-        main_layout.addLayout(default_row)
+        content_layout.addLayout(default_row)
+
+        # Add content widget to main layout
+        main_layout.addWidget(content)
 
         self.member_combo.currentTextChanged.connect(self._on_member_changed)
         self.material_combo.currentTextChanged.connect(self._on_material_changed)
