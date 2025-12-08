@@ -4,7 +4,7 @@ import math
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QPushButton,
     QComboBox, QScrollArea, QLabel, QFormLayout, QLineEdit, QGroupBox, QSizePolicy, QMessageBox, QInputDialog, QDialog, QCheckBox, QFrame,
-    QDialogButtonBox, QStackedWidget
+    QDialogButtonBox, QStackedWidget, QSpinBox, QDoubleSpinBox, QPlainTextEdit, QTextEdit
 )
 from PySide6.QtCore import Qt, QRegularExpression, QSize
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator, QIcon
@@ -12,6 +12,7 @@ from PySide6.QtSvgWidgets import *
 from osbridge.backend.common import *
 from osbridge.ui.additional_inputs import AdditionalInputsWidget
 from osbridge.ui.custom_buttons import DockCustomButton
+from osbridge.resources import resources_rc  # Ensure QRC resources (e.g., Osdag logo) are loaded
 
 
 STEEL_MEMBER_FIELDS = [
@@ -147,7 +148,7 @@ class CustomTitleBar(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFixedHeight(36)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet("background-color: #f5f5f5; border-bottom: 1px solid #d0d0d0;")
+        self.setStyleSheet("background-color: #f5f5f5; border: none;")
 
         # Add Osdag logo icon
         self.logo_label = QSvgWidget(":/vectors/Osdag_logo.svg", self)
@@ -166,8 +167,79 @@ class CustomTitleBar(QWidget):
         self.btn_close.setToolTip("Close")
         self.btn_close.setFixedSize(36, 36)
         self.btn_close.setStyleSheet(
-            "QPushButton { background: transparent; border: none; font-size: 14px; color: #5b5b5b; }"
-            "QPushButton:hover { background: #e81123; color: #ffffff; }"
+            "QPushButton { background: transparent; border: none; font-size: 14px; color: #2b2b2b; }"
+            "QPushButton:hover { background: #e0e0e0; color: #000000; }"
+        )
+        self.btn_close.clicked.connect(self._close_parent)
+
+        # Layout
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 0, 0)
+        layout.setSpacing(10)
+        layout.addWidget(self.logo_label)
+        layout.addWidget(self.title_label, 1)
+        layout.addWidget(self.btn_close)
+
+    def setTitle(self, title):
+        self.title_label.setText(title)
+
+    def _close_parent(self):
+        if self.parent():
+            self.parent().close()
+
+    def mousePressEvent(self, event):
+        from PySide6.QtCore import QPoint
+        if event.button() == Qt.LeftButton:
+            if self.parent() and self.parent().isWindow():
+                self._drag_pos = event.globalPosition().toPoint() - self.parent().frameGeometry().topLeft()
+                event.accept()
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.LeftButton and 
+            not self._drag_pos.isNull() and 
+            self.parent() and 
+            self.parent().isWindow()):
+            self.parent().move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        from PySide6.QtCore import QPoint
+        if event.button() == Qt.LeftButton:
+            self._drag_pos = QPoint()
+            event.accept()
+
+class CustomTitleBar(QWidget):
+    """Custom title bar for dialogs with Osdag styling"""
+    def __init__(self, title="Dialog", parent=None):
+        super().__init__(parent)
+        from PySide6.QtCore import QPoint
+        
+        self._drag_pos = QPoint()
+        self.setObjectName("CustomTitleBar")
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFixedHeight(36)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setStyleSheet("background-color: #f5f5f5; border: none;")
+
+        # Add Osdag logo icon
+        self.logo_label = QSvgWidget(":/vectors/Osdag_logo.svg", self)
+        self.logo_label.setObjectName("LogoLabel")
+        self.logo_label.setFixedSize(22, 22)
+
+        # Title label
+        self.title_label = QLabel(title, self)
+        self.title_label.setObjectName("TitleLabel")
+        self.title_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        self.title_label.setStyleSheet("font-size: 12px; font-weight: 500; color: #2b2b2b; background: transparent; border: none;")
+
+        # Close button
+        self.btn_close = QPushButton("✕", self)
+        self.btn_close.setObjectName("CloseButton")
+        self.btn_close.setToolTip("Close")
+        self.btn_close.setFixedSize(36, 36)
+        self.btn_close.setStyleSheet(
+            "QPushButton { background: transparent; border: none; font-size: 14px; color: #2b2b2b; }"
+            "QPushButton:hover { background: #e0e0e0; color: #000000; }"
         )
         self.btn_close.clicked.connect(self._close_parent)
 
@@ -216,7 +288,9 @@ class MaterialPropertiesDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setMinimumWidth(580)
-        self.setStyleSheet("QDialog { background-color: #ffffff; border: 1px solid #b2b2b2; }")
+        self.setStyleSheet(
+            "QDialog { background-color: #ffffff; border: 3px solid #9ecb3d; }"
+        )
 
         self.parent_dock = parent
         self._loading = False
@@ -714,6 +788,8 @@ class MaterialPropertiesDialog(QDialog):
         for member, data in self.member_data.items():
             if data.get("is_default"):
                 self._apply_defaults_for_member(member, update_ui=(member == self.current_member))
+
+
 def create_group_box(title):
     """Create a styled group box"""
     group_box = QGroupBox(title)
@@ -738,7 +814,6 @@ def create_group_box(title):
         }
     """)
     return group_box
-
 
 def create_form_row(label_text, widget, tooltip=None):
     """Create a horizontal layout with label and widget side by side"""
@@ -1967,12 +2042,14 @@ class InputDock(QWidget):
             scroll_area.setWidget(self.additional_inputs_widget)
             self.additional_inputs_window.destroyed.connect(lambda _=None: self._handle_additional_inputs_closed())
             self._set_additional_inputs_enabled(not self.is_locked)
+            self._set_lock_visual_state(self.is_locked)
             
             self.additional_inputs_window.show()
         else:
             self.additional_inputs_window.raise_()
             self.additional_inputs_window.activateWindow()
             self._set_additional_inputs_enabled(not self.is_locked)
+            self._set_lock_visual_state(self.is_locked)
     
     def _toggle_lock_state(self):
         self.is_locked = not self.is_locked
@@ -1992,6 +2069,72 @@ class InputDock(QWidget):
 
         if self.material_dialog:
             self.material_dialog.setEnabled(enabled)
+
+        # Apply a gray visual cue when locked
+        self._set_lock_visual_state(self.is_locked)
+
+    def _set_lock_visual_state(self, locked: bool):
+        """Gray-out basic and additional inputs when locked, restore when unlocked."""
+        lock_qss = (
+            "QWidget[locked=\"true\"] QLineEdit,"
+            " QWidget[locked=\"true\"] QPlainTextEdit,"
+            " QWidget[locked=\"true\"] QTextEdit,"
+            " QWidget[locked=\"true\"] QSpinBox,"
+            " QWidget[locked=\"true\"] QDoubleSpinBox,"
+            " QWidget[locked=\"true\"] QComboBox {"
+            "     background: #f0f0f0;"
+            "     color: #6a6a6a;"
+            "     border: 1px solid #c2c2c2;"
+            " }"
+            " QWidget[locked=\"true\"] QComboBox::drop-down { border-left: 0px; }"
+        )
+
+        def apply_to_container(container):
+            if not container:
+                return
+            base_style = container.property("_base_style_sheet")
+            if base_style is None:
+                base_style = container.styleSheet() or ""
+                container.setProperty("_base_style_sheet", base_style)
+
+            container.setProperty("locked", locked)
+            container.setStyleSheet(base_style + ("\n" + lock_qss if locked else ""))
+
+            # For text edits, also toggle readOnly for clearer non-editable feel
+            for cls in (QLineEdit, QPlainTextEdit, QTextEdit):
+                for widget in container.findChildren(cls):
+                    widget.setReadOnly(locked)
+                    widget.setProperty("locked", locked)
+                    base_w_style = widget.property("_base_style_sheet")
+                    if base_w_style is None:
+                        base_w_style = widget.styleSheet() or ""
+                        widget.setProperty("_base_style_sheet", base_w_style)
+                    locked_style = "background: #f0f0f0; color: #6a6a6a; border: 1px solid #c2c2c2;"
+                    widget.setStyleSheet(base_w_style + ("\n" + locked_style if locked else ""))
+                    widget.style().unpolish(widget)
+                    widget.style().polish(widget)
+
+            for cls in (QComboBox, QSpinBox, QDoubleSpinBox):
+                for widget in container.findChildren(cls):
+                    widget.setProperty("locked", locked)
+                    base_w_style = widget.property("_base_style_sheet")
+                    if base_w_style is None:
+                        base_w_style = widget.styleSheet() or ""
+                        widget.setProperty("_base_style_sheet", base_w_style)
+                    if isinstance(widget, QComboBox):
+                        locked_style = (
+                            "QComboBox { background: #f0f0f0; color: #6a6a6a; border: 1px solid #c2c2c2; }"
+                            "QComboBox:disabled { background: #f0f0f0; color: #6a6a6a; border: 1px solid #c2c2c2; }"
+                            "QComboBox::drop-down { border-left: 0px; }"
+                        )
+                    else:
+                        locked_style = "background: #f0f0f0; color: #6a6a6a; border: 1px solid #c2c2c2;"
+                    widget.setStyleSheet(base_w_style + ("\n" + locked_style if locked else ""))
+                    widget.style().unpolish(widget)
+                    widget.style().polish(widget)
+
+        apply_to_container(self.input_widget)
+        apply_to_container(self.additional_inputs_widget)
 
     def _set_additional_inputs_enabled(self, enabled):
         if self.additional_inputs_widget:

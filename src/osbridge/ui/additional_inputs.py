@@ -1078,7 +1078,9 @@ class GirderDetailsTab(QWidget):
         self._set_field_width(self.span_combo)
 
         self.member_id_input = QLineEdit("G1-1")
+        self.member_id_input.setReadOnly(True)
         apply_field_style(self.member_id_input)
+        self.member_id_input.setStyleSheet(self.member_id_input.styleSheet() + "\nQLineEdit { background: #f2f2f2; color: #6a6a6a; border: 1px solid #c2c2c2; }")
         self._set_field_width(self.member_id_input)
 
         self.member_select_combo = QComboBox()
@@ -1090,35 +1092,39 @@ class GirderDetailsTab(QWidget):
         self.distance_end_input = QLineEdit("30")
         apply_field_style(self.distance_start_input)
         apply_field_style(self.distance_end_input)
-        self._set_field_width(self.distance_start_input, 80)
-        self._set_field_width(self.distance_end_input, 80)
+        self._set_field_width(self.distance_start_input, 70)
+        self._set_field_width(self.distance_end_input, 70)
 
         self.length_input = QLineEdit("30")
+        self.length_input.setReadOnly(True)
         apply_field_style(self.length_input)
+        self.length_input.setStyleSheet(self.length_input.styleSheet() + "\nQLineEdit { background: #f2f2f2; color: #6a6a6a; border: 1px solid #c2c2c2; }")
         self._set_field_width(self.length_input)
 
+        # Left inputs (Select Girder, Span, Member)
         layout.addWidget(self._create_label("Select Girder:"), 0, 0)
         layout.addWidget(self.select_girder_combo, 0, 1)
-        layout.addWidget(self._create_label("Span:"), 0, 2)
-        layout.addWidget(self.span_combo, 0, 3)
+        layout.addWidget(self._create_label("Member:"), 1, 0)
+        layout.addWidget(self.member_select_combo, 1, 1)
+        layout.addWidget(self._create_label("Span:"), 2, 0)
+        layout.addWidget(self.span_combo, 2, 1)
 
-        layout.addWidget(self._create_label("Member ID:"), 1, 0)
-        layout.addWidget(self.member_id_input, 1, 1)
+        # Right outputs (Member ID, Length) light gray
+        layout.addWidget(self._create_label("Member ID:"), 0, 2)
+        layout.addWidget(self.member_id_input, 0, 3)
         layout.addWidget(self._create_label("Length (m):"), 1, 2)
         layout.addWidget(self.length_input, 1, 3)
 
-        layout.addWidget(self._create_label("Distance from left edge (m):"), 2, 0)
-        layout.addLayout(self._build_distance_row(), 2, 1)
-
-        layout.addWidget(self._create_label("Member:"), 2, 2)
-        layout.addWidget(self.member_select_combo, 2, 3)
+        # Distance row shifted to right column
+        layout.addWidget(self._create_label("Distance from left edge (m):"), 2, 2)
+        layout.addLayout(self._build_distance_row(), 2, 3)
 
         return card
 
     def _build_distance_row(self):
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(8)
+        row.setSpacing(4)
         row.addWidget(self._create_small_label("Start"))
         row.addWidget(self.distance_start_input)
         row.addWidget(self._create_small_label("End"))
