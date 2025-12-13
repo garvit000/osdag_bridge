@@ -15,6 +15,7 @@ from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 
 from osbridge.backend.common import *
+from osbridge.resources import resources_rc  # Ensure checkbox SVGs are available
 
 
 def get_combobox_style():
@@ -100,6 +101,29 @@ def apply_field_style(widget):
         widget.setStyleSheet(get_combobox_style())
     elif isinstance(widget, QLineEdit):
         widget.setStyleSheet(get_lineedit_style())
+
+
+CHECKBOX_STYLE = (
+    "QCheckBox { spacing: 6px; }"
+    "QCheckBox::indicator {"
+    "   width: 18px; height: 18px; border: none; background: transparent;"
+    "   image: url(:/vectors/check_box_unticked.svg);"
+    "}"
+    "QCheckBox::indicator:checked {"
+    "   image: url(:/vectors/check_box_ticked.svg);"
+    "}"
+    "QCheckBox::indicator:hover {"
+    "   image: url(:/vectors/check_box_unticked.svg);"
+    "}"
+    "QCheckBox::indicator:checked:hover {"
+    "   image: url(:/vectors/check_box_ticked.svg);"
+    "}"
+)
+
+
+def apply_checkbox_style(checkbox: QCheckBox):
+    """Apply shared checkbox style using SVG indicators."""
+    checkbox.setStyleSheet(CHECKBOX_STYLE)
 
 
 def create_action_button_bar(parent=None):
@@ -343,12 +367,6 @@ class TypicalSectionDetailsTab(QWidget):
 
         input_layout.addWidget(self.input_tabs)
         main_layout.addWidget(input_container)
-
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        self.defaults_button.clicked.connect(lambda: self._show_placeholder_message("Defaults"))
-        self.save_button.clicked.connect(lambda: self._show_placeholder_message("Save"))
-        main_layout.addSpacing(8)
-        main_layout.addWidget(action_bar)
 
         self.deck_thickness.textChanged.connect(self.update_footpath_thickness)
         self.recalculate_girders()
@@ -930,8 +948,9 @@ class SectionPropertiesTab(QWidget):
         """Initialize styled navigation and content panels."""
         self.setStyleSheet("background-color: #f0f0f0;")
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
+        # Keep sides padded but remove top spacing so sub-tabs sit flush under main tabs
+        main_layout.setContentsMargins(10, 0, 10, 10)
+        main_layout.setSpacing(0)
 
         # Top navigation bar (horizontal)
         nav_bar = QWidget()
@@ -963,10 +982,10 @@ class SectionPropertiesTab(QWidget):
         main_layout.addWidget(content_frame, 1)
 
         sections = [
-            ("Girder Details:", GirderDetailsTab),
-            ("Stiffener Details:", StiffenerDetailsTab),
-            ("Cross-Bracing Details:", CrossBracingDetailsTab),
-            ("End Diaphragm Details:", EndDiaphragmDetailsTab),
+            ("Girder Details", GirderDetailsTab),
+            ("Stiffener Details", StiffenerDetailsTab),
+            ("Cross-Bracing Details", CrossBracingDetailsTab),
+            ("End Diaphragm Details", EndDiaphragmDetailsTab),
         ]
 
         for i, (label, widget_class) in enumerate(sections):
@@ -978,21 +997,12 @@ class SectionPropertiesTab(QWidget):
                     background-color: white;
                     color: #333;
                     border: 1px solid #b0b0b0;
-                    border-right: none;
-                    padding: 6px 14px;
+                    padding: 10px 20px;
                     text-align: center;
                     font-size: 10px;
-                    font-weight: normal;
-                    min-height: 26px;
-                }
-                QPushButton#sectionNavBtn:first {
-                    border-top-left-radius: 5px;
-                    border-bottom-left-radius: 5px;
-                }
-                QPushButton#sectionNavBtn:last {
-                    border-right: 1px solid #b0b0b0;
-                    border-top-right-radius: 5px;
-                    border-bottom-right-radius: 5px;
+                    font-weight: bold;
+                    margin-top: 3px;
+                    margin-bottom: 10px;
                 }
                 QPushButton#sectionNavBtn:checked {
                     background-color: #90AF13;
@@ -1014,10 +1024,6 @@ class SectionPropertiesTab(QWidget):
         if self.nav_buttons:
             self.nav_buttons[0].setChecked(True)
             self.stack.setCurrentIndex(0)
-
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
 
     def switch_section(self, index):
         """Switch the stacked widget page and update navigation states."""
@@ -2504,8 +2510,8 @@ class LoadingTab(QWidget):
             "QTabWidget::pane { border: none; background: #f5f5f5; }"
             "QTabBar::tab { background: #e8e8e8; color: #4b4b4b; border: 1px solid #cfcfcf;"
             " border-bottom: none; padding: 8px 20px; margin-right: 2px; min-width: 120px;"
-            " font-size: 11px; border-top-left-radius: 6px; border-top-right-radius: 6px; }"
-            "QTabBar::tab:selected { background: #9ecb3d; color: #ffffff; font-weight: bold; }"
+            " font-size: 11px; }"
+            "QTabBar::tab:selected { background: #90AF13; color: #ffffff; font-weight: bold; }"
             "QTabBar::tab:!selected { margin-top: 2px; }"
         )
 
@@ -2517,10 +2523,6 @@ class LoadingTab(QWidget):
         self.load_tabs.addTab(self._create_placeholder_page("Custom Load"), "Custom Load")
         self.load_tabs.addTab(self._build_load_combination_tab(), "Load Combination")
         main_layout.addWidget(self.load_tabs)
-
-        action_bar, self.defaults_button, self.save_button = create_action_button_bar()
-        main_layout.addSpacing(6)
-        main_layout.addWidget(action_bar)
 
     def _build_permanent_load_tab(self):
         page = QWidget()
@@ -2630,11 +2632,6 @@ class LoadingTab(QWidget):
 
         # Vehicle Name 1 and 2 as simple checkbox rows (like reference image 2)
         self.custom_vehicle_checkboxes = []
-        checkbox_style = (
-            "QCheckBox::indicator { width: 18px; height: 18px; background: #ffffff; border: 1px solid #7a7a7a; border-radius: 3px; }"
-            "QCheckBox::indicator:checked { background: #ffffff; border: 1px solid #5c5c5c; }"
-            "QCheckBox::indicator:checked:enabled { image: none; }"
-        )
         for index in range(2):
             row_layout = QHBoxLayout()
             row_layout.setContentsMargins(0, 0, 0, 0)
@@ -2642,7 +2639,7 @@ class LoadingTab(QWidget):
             label = QLabel(f"Vehicle Name {index + 1}")
             label.setStyleSheet("font-size: 11px; font-style: italic; color: #4b4b4b; background: transparent; border: none;")
             checkbox = QCheckBox()
-            checkbox.setStyleSheet(checkbox_style)
+            apply_checkbox_style(checkbox)
             checkbox.setChecked(False)
             row_layout.addWidget(label)
             row_layout.addStretch()
@@ -2816,7 +2813,7 @@ class LoadingTab(QWidget):
             "Type II – Medium Soil Sites",
             "Type III – Soft Soil Sites"
         ])
-        self.soil_type_combo.setFixedWidth(field_width + 30)
+        self.soil_type_combo.setFixedWidth(field_width)
         apply_field_style(self.soil_type_combo)
         seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         seismic_inputs_layout.addWidget(self.soil_type_combo, row, 1, Qt.AlignLeft)
@@ -2836,7 +2833,7 @@ class LoadingTab(QWidget):
         lbl = QLabel("Damping Percentage:")
         lbl.setStyleSheet(label_style)
         self.damping_input = QLineEdit()
-        self.damping_input.setText("2")
+        self.damping_input.setText("2%")
         self.damping_input.setFixedWidth(field_width)
         apply_field_style(self.damping_input)
         seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
@@ -2864,7 +2861,7 @@ class LoadingTab(QWidget):
         apply_field_style(self.dead_load_seismic_combo)
         seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         seismic_inputs_layout.addWidget(self.dead_load_seismic_combo, row, 1, Qt.AlignLeft)
-        row += 1
+        
 
         # Custom Value for Dead Load
         self.dead_load_custom_input = QLineEdit()
@@ -2872,7 +2869,7 @@ class LoadingTab(QWidget):
         self.dead_load_custom_input.setFixedWidth(field_width)
         self.dead_load_custom_input.setEnabled(False)
         apply_field_style(self.dead_load_custom_input)
-        seismic_inputs_layout.addWidget(self.dead_load_custom_input, row, 1, Qt.AlignLeft)
+        seismic_inputs_layout.addWidget(self.dead_load_custom_input, row, 2, Qt.AlignLeft)
         row += 1
 
         # Live Load for Seismic Force
@@ -2884,7 +2881,7 @@ class LoadingTab(QWidget):
         apply_field_style(self.live_load_seismic_combo)
         seismic_inputs_layout.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         seismic_inputs_layout.addWidget(self.live_load_seismic_combo, row, 1, Qt.AlignLeft)
-        row += 1
+        
 
         # Custom Value for Live Load
         self.live_load_custom_input = QLineEdit()
@@ -2892,7 +2889,7 @@ class LoadingTab(QWidget):
         self.live_load_custom_input.setFixedWidth(field_width)
         self.live_load_custom_input.setEnabled(False)
         apply_field_style(self.live_load_custom_input)
-        seismic_inputs_layout.addWidget(self.live_load_custom_input, row, 1, Qt.AlignLeft)
+        seismic_inputs_layout.addWidget(self.live_load_custom_input, row, 2, Qt.AlignLeft)
 
         left_layout.addWidget(seismic_inputs_box)
 
@@ -3009,12 +3006,6 @@ class LoadingTab(QWidget):
         grid.setVerticalSpacing(8)
         grid.setColumnStretch(0, 1)
 
-        # Simple checkbox style that shows a checkmark when checked
-        checkbox_style = (
-            "QCheckBox::indicator { width: 18px; height: 18px; background: #ffffff; border: 1px solid #7a7a7a; border-radius: 3px; }"
-            "QCheckBox::indicator:checked { background: #ffffff; border: 1px solid #5c5c5c; }"
-        )
-
         for row, name in enumerate(items):
             label = QLabel(name)
             # Make Vehicle Name entries italic
@@ -3023,7 +3014,7 @@ class LoadingTab(QWidget):
             else:
                 label.setStyleSheet("font-size: 11px; color: #4b4b4b; background: transparent; border: none; padding: 0px;")
             checkbox = QCheckBox()
-            checkbox.setStyleSheet(checkbox_style)
+            apply_checkbox_style(checkbox)
             checkbox.setChecked(False)
             grid.addWidget(label, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
             grid.addWidget(checkbox, row, 1, Qt.AlignRight | Qt.AlignVCenter)
@@ -3165,13 +3156,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.gust_factor_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.gust_factor_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.gust_factor_value = QLineEdit()
         self.gust_factor_value.setPlaceholderText("Value")
         self.gust_factor_value.setFixedWidth(field_width)
         self.gust_factor_value.setEnabled(False)
         apply_field_style(self.gust_factor_value)
-        wind_grid.addWidget(self.gust_factor_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.gust_factor_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Drag Coefficient, CD
@@ -3183,13 +3173,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.drag_coeff_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.drag_coeff_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.drag_coeff_value = QLineEdit()
         self.drag_coeff_value.setPlaceholderText("Custom Value")
         self.drag_coeff_value.setFixedWidth(field_width)
         self.drag_coeff_value.setEnabled(False)
         apply_field_style(self.drag_coeff_value)
-        wind_grid.addWidget(self.drag_coeff_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.drag_coeff_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Drag Coefficient against Live Load, CDLL
@@ -3201,13 +3190,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.drag_coeff_ll_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.drag_coeff_ll_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.drag_coeff_ll_value = QLineEdit()
         self.drag_coeff_ll_value.setPlaceholderText("Value")
         self.drag_coeff_ll_value.setFixedWidth(field_width)
         self.drag_coeff_ll_value.setEnabled(False)
         apply_field_style(self.drag_coeff_ll_value)
-        wind_grid.addWidget(self.drag_coeff_ll_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.drag_coeff_ll_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Lift Coefficient, CL
@@ -3219,13 +3207,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.lift_coeff_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.lift_coeff_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.lift_coeff_value = QLineEdit()
         self.lift_coeff_value.setPlaceholderText("Value")
         self.lift_coeff_value.setFixedWidth(field_width)
         self.lift_coeff_value.setEnabled(False)
         apply_field_style(self.lift_coeff_value)
-        wind_grid.addWidget(self.lift_coeff_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.lift_coeff_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Superstructure Area in Elevation
@@ -3237,13 +3224,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.super_area_elev_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.super_area_elev_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.super_area_elev_value = QLineEdit()
         self.super_area_elev_value.setPlaceholderText("Custom Value")
         self.super_area_elev_value.setFixedWidth(field_width)
         self.super_area_elev_value.setEnabled(False)
         apply_field_style(self.super_area_elev_value)
-        wind_grid.addWidget(self.super_area_elev_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.super_area_elev_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Superstructure Area in Plain
@@ -3255,13 +3241,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.super_area_plain_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.super_area_plain_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.super_area_plain_value = QLineEdit()
         self.super_area_plain_value.setPlaceholderText("Custom Value")
         self.super_area_plain_value.setFixedWidth(field_width)
         self.super_area_plain_value.setEnabled(False)
         apply_field_style(self.super_area_plain_value)
-        wind_grid.addWidget(self.super_area_plain_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.super_area_plain_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Exposed Frontal Area of Live Load
@@ -3273,13 +3258,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.exposed_frontal_area_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.exposed_frontal_area_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.exposed_frontal_area_value = QLineEdit()
         self.exposed_frontal_area_value.setPlaceholderText("Custom Value")
         self.exposed_frontal_area_value.setFixedWidth(field_width)
         self.exposed_frontal_area_value.setEnabled(False)
         apply_field_style(self.exposed_frontal_area_value)
-        wind_grid.addWidget(self.exposed_frontal_area_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.exposed_frontal_area_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Wind Load Eccentricity from Top of Deck
@@ -3291,13 +3275,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.wind_ecc_deck_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.wind_ecc_deck_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.wind_ecc_deck_value = QLineEdit()
         self.wind_ecc_deck_value.setPlaceholderText("Value")
         self.wind_ecc_deck_value.setFixedWidth(field_width)
         self.wind_ecc_deck_value.setEnabled(False)
         apply_field_style(self.wind_ecc_deck_value)
-        wind_grid.addWidget(self.wind_ecc_deck_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.wind_ecc_deck_value, row, 2, Qt.AlignLeft)
         row += 1
 
         # Wind on Live Load Eccentricity from Top of Deck
@@ -3309,13 +3292,12 @@ class LoadingTab(QWidget):
         apply_field_style(self.wind_ll_ecc_combo)
         wind_grid.addWidget(lbl, row, 0, Qt.AlignLeft | Qt.AlignVCenter)
         wind_grid.addWidget(self.wind_ll_ecc_combo, row, 1, Qt.AlignLeft)
-        row += 1
         self.wind_ll_ecc_value = QLineEdit()
         self.wind_ll_ecc_value.setPlaceholderText("Value")
         self.wind_ll_ecc_value.setFixedWidth(field_width)
         self.wind_ll_ecc_value.setEnabled(False)
         apply_field_style(self.wind_ll_ecc_value)
-        wind_grid.addWidget(self.wind_ll_ecc_value, row, 1, Qt.AlignLeft)
+        wind_grid.addWidget(self.wind_ll_ecc_value, row, 2, Qt.AlignLeft)
 
         wind_inputs_layout.addLayout(wind_grid)
         left_layout.addWidget(wind_inputs_box)
@@ -3559,11 +3541,7 @@ class LoadingTab(QWidget):
         auto_label = QLabel("Auto include all IRC 6 Load Combinations")
         auto_label.setStyleSheet("font-size: 11px; color: #3a3a3a; background: transparent; border: none;")
         self.auto_include_checkbox = QCheckBox()
-        self.auto_include_checkbox.setStyleSheet(
-            "QCheckBox { background: transparent; border: none; }"
-            "QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #b2b2b2; border-radius: 3px; background: #ffffff; }"
-            "QCheckBox::indicator:checked { background: #9ecb3d; border: 1px solid #7da832; }"
-        )
+        apply_checkbox_style(self.auto_include_checkbox)
         auto_row.addWidget(auto_label)
         auto_row.addWidget(self.auto_include_checkbox)
         auto_row.addStretch()
@@ -4027,10 +4005,7 @@ class AdditionalInputsWidget(QWidget):
         layout.addWidget(desc_label)
         
         layout.addStretch()
-        layout.addSpacing(10)
-        action_bar, _, _ = create_action_button_bar(widget)
-        layout.addWidget(action_bar)
-        
+
         return widget
     
     def update_footpath_value(self, footpath_value):

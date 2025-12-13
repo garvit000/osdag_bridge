@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QRegularExpression, QSize
 from PySide6.QtGui import QPixmap, QDoubleValidator, QRegularExpressionValidator, QIcon
 from PySide6.QtSvgWidgets import *
 from osbridge.backend.common import *
-from osbridge.ui.additional_inputs import AdditionalInputsWidget
+from osbridge.ui.additional_inputs import AdditionalInputsWidget, create_action_button_bar
 from osbridge.ui.custom_buttons import DockCustomButton
 from osbridge.resources import resources_rc  # Ensure QRC resources (e.g., Osdag logo) are loaded
 
@@ -135,6 +135,28 @@ def apply_field_style(widget):
                 font-weight: normal;
             }
         """)
+
+
+CHECKBOX_STYLE = (
+    "QCheckBox { spacing: 6px; }"
+    "QCheckBox::indicator {"
+    "   width: 18px; height: 18px; border: none; background: transparent;"
+    "   image: url(:/vectors/check_box_unticked.svg);"
+    "}"
+    "QCheckBox::indicator:checked {"
+    "   image: url(:/vectors/check_box_ticked.svg);"
+    "}"
+    "QCheckBox::indicator:hover {"
+    "   image: url(:/vectors/check_box_unticked.svg);"
+    "}"
+    "QCheckBox::indicator:checked:hover {"
+    "   image: url(:/vectors/check_box_ticked.svg);"
+    "}"
+)
+
+
+def apply_checkbox_style(checkbox: QCheckBox):
+    checkbox.setStyleSheet(CHECKBOX_STYLE)
 
 
 class CustomTitleBar(QWidget):
@@ -371,24 +393,7 @@ class MaterialPropertiesDialog(QDialog):
         default_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         default_label.setFixedWidth(280)
         self.default_checkbox = QCheckBox()
-        self.default_checkbox.setStyleSheet(
-            """
-            QCheckBox {
-                spacing: 6px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                background: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #90AF13;
-                border-color: #90AF13;
-            }
-            """
-        )
+        apply_checkbox_style(self.default_checkbox)
         # Create container for checkbox to align it to the left
         checkbox_container = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_container)
@@ -961,28 +966,7 @@ class InputDock(QWidget):
         coords_row.setSpacing(15)
         
         self.coords_checkbox = QCheckBox("Enter Coordinates")
-        self.coords_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 12px; 
-                font-weight: normal;
-                color: black;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #90AF13;
-                border-color: #90AF13;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #7a9a12;
-            }
-        """)
+        apply_checkbox_style(self.coords_checkbox)
         coords_row.addWidget(self.coords_checkbox)
         
         coords_row.addStretch()
@@ -996,11 +980,11 @@ class InputDock(QWidget):
         self.latitude_input.setEnabled(False)
         apply_field_style(self.latitude_input)
         coords_row.addWidget(self.latitude_input)
-        
-        lng_label = QLabel("Longitude (°)")
-        lng_label.setStyleSheet("font-size: 11px;")
-        coords_row.addWidget(lng_label)
-        
+
+        lon_label = QLabel("Longitude (°)")
+        lon_label.setStyleSheet("font-size: 11px;")
+        coords_row.addWidget(lon_label)
+
         self.longitude_input = QLineEdit()
         self.longitude_input.setMaximumWidth(120)
         self.longitude_input.setEnabled(False)
@@ -1021,32 +1005,9 @@ class InputDock(QWidget):
         location_row.setSpacing(15)
         
         self.location_checkbox = QCheckBox("Enter Location Name")
-        self.location_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 12px; 
-                font-weight: normal;
-                color: black;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #90AF13;
-                border-color: #90AF13;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #7a9a12;
-            }
-        """)
+        apply_checkbox_style(self.location_checkbox)
         location_row.addWidget(self.location_checkbox)
-        
-        location_row.addStretch()
-        
+
         state_label = QLabel("State")
         state_label.setStyleSheet("font-size: 11px;")
         location_row.addWidget(state_label)
@@ -1083,28 +1044,7 @@ class InputDock(QWidget):
         map_section.setSpacing(8)
         
         self.map_checkbox = QCheckBox("Select on Map")
-        self.map_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 12px; 
-                font-weight: normal;
-                color: black;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #90AF13;
-                border-color: #90AF13;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #7a9a12;
-            }
-        """)
+        apply_checkbox_style(self.map_checkbox)
         map_section.addWidget(self.map_checkbox)
         
         # Map placeholder
@@ -1112,7 +1052,7 @@ class InputDock(QWidget):
         self.map_placeholder.setStyleSheet("""
             QLabel {
                 border: 1px solid #e0e0e0;
-                background-color: white;
+                background-color: #f5f5f5;
                 padding: 20px;
                 color: #999999;
             }
@@ -1163,27 +1103,7 @@ class InputDock(QWidget):
         
         # === Custom Loading Parameters Checkbox ===
         self.custom_params_checkbox = QCheckBox("Tabulate Custom Loading Parameters")
-        self.custom_params_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 11px;
-                color: black;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #b0b0b0;
-                border-radius: 3px;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #90AF13;
-                border-color: #90AF13;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #7a9a12;
-            }
-        """)
+        apply_checkbox_style(self.custom_params_checkbox)
         main_layout.addWidget(self.custom_params_checkbox)
         
         main_layout.addStretch()
@@ -1264,8 +1184,18 @@ class InputDock(QWidget):
                 self.map_placeholder.setText("Map Placeholder\n(Will be added later)")
         
         # Connect checkbox signals to enable/disable fields
-        self.coords_checkbox.stateChanged.connect(lambda state: self.latitude_input.setEnabled(state == 2) or self.longitude_input.setEnabled(state == 2))
-        self.location_checkbox.stateChanged.connect(lambda state: self.state_combo.setEnabled(state == 2) or self.district_combo.setEnabled(state == 2))
+        def on_coords_checkbox_changed(state):
+            enabled = state == Qt.Checked
+            self.latitude_input.setEnabled(enabled)
+            self.longitude_input.setEnabled(enabled)
+
+        def on_location_checkbox_changed(state):
+            enabled = state == Qt.Checked
+            self.state_combo.setEnabled(enabled)
+            self.district_combo.setEnabled(enabled)
+
+        self.coords_checkbox.stateChanged.connect(on_coords_checkbox_changed)
+        self.location_checkbox.stateChanged.connect(on_location_checkbox_changed)
         self.map_checkbox.stateChanged.connect(on_map_checkbox_changed)
         
         # Connect state combo to update districts
@@ -2030,16 +1960,27 @@ class InputDock(QWidget):
             
             layout = QVBoxLayout(self.additional_inputs_window)
             layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(0)
             
             scroll_area = QScrollArea(self.additional_inputs_window)
             scroll_area.setWidgetResizable(True)
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             scroll_area.setFrameShape(QFrame.NoFrame)
             scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
-            layout.addWidget(scroll_area)
+            layout.addWidget(scroll_area, 1)
 
             self.additional_inputs_widget = AdditionalInputsWidget(footpath_value, carriageway_width)
             scroll_area.setWidget(self.additional_inputs_widget)
+
+            # Sticky footer bar (Defaults/Save) always visible
+            footer_bar, footer_defaults, footer_save = create_action_button_bar(self.additional_inputs_window)
+            footer_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            layout.addWidget(footer_bar, 0)
+
+            # Wire footer buttons to the same placeholder handlers
+            footer_defaults.clicked.connect(lambda: self.additional_inputs_widget._show_placeholder_message("Defaults"))
+            footer_save.clicked.connect(lambda: self.additional_inputs_widget._show_placeholder_message("Save"))
+
             self.additional_inputs_window.destroyed.connect(lambda _=None: self._handle_additional_inputs_closed())
             self._set_additional_inputs_enabled(not self.is_locked)
             self._set_lock_visual_state(self.is_locked)
